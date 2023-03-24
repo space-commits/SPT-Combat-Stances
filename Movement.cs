@@ -1,6 +1,5 @@
 ﻿using Aki.Reflection.Patching;
 using BepInEx.Logging;
-using CombatStances;
 using Comfort.Common;
 using EFT;
 using EFT.InventoryLogic;
@@ -13,7 +12,7 @@ using System.Text;
 using UnityEngine;
 using static EFT.Player;
 
-namespace CombatOverhaul
+namespace CombatStances
 {
     public class SetAimingSlowdownPatch : ModulePatch
     {

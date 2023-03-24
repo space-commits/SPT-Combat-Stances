@@ -1,5 +1,4 @@
 ﻿using Aki.Reflection.Patching;
-using CombatOverhaul;
 using CombatStances;
 using Comfort.Common;
 using EFT;
@@ -14,7 +13,7 @@ using UnityEngine;
 
 
 
-namespace CombatOverhaul
+namespace CombatStances
 {
 
     public class SetAimingPatch : ModulePatch
@@ -52,9 +51,9 @@ namespace CombatOverhaul
             return x.IsProtruding();
         }
 
-        private static bool IsAllowedADSWithFS(Weapon weapon, Player player) 
+        private static bool IsAllowedADSWithFS(Weapon weapon, Player.FirearmController fc) 
         {
-            if (weapon.WeapClass == "pistol" && (float)weapon.CalculateCellSize().X < 3) 
+            if (weapon.WeapClass == "pistol" && (float)weapon.CalculateCellSize().X < 3 && !fc.IsSilenced) 
             {
                 return true;
             }
@@ -109,7 +108,7 @@ namespace CombatOverhaul
                     NightVisionComponent nvgComponent = player.NightVisionObserver.Component;
                     bool fsIsON = fsComponent != null && (fsComponent.Togglable == null || fsComponent.Togglable.On);
                     bool nvgIsOn = nvgComponent != null && (nvgComponent.Togglable == null || nvgComponent.Togglable.On);
-                    bool isAllowedADSFS = IsAllowedADSWithFS(__instance.Item, player);
+                    bool isAllowedADSFS = IsAllowedADSWithFS(__instance.Item, __instance);
                     if ((Plugin.EnableNVGPatch.Value == true && nvgIsOn == true && Plugin.HasOptic) || (Plugin.EnableFSPatch.Value == true && (fsIsON && !isAllowedADSFS)))
                     {
                         if (!SetCanAds)
@@ -143,8 +142,6 @@ namespace CombatOverhaul
                         SetActiveAimADS = false;
                     }
 
-                    /*                    Logger.LogWarning("sprint = " + player.BodyAnimatorCommon.GetFloat(GClass1645.WEAPON_SIZE_MODIFIER_PARAM_HASH));
-                    */
                     if ((StanceController.IsHighReady == true || StanceController.WasHighReady == true) && !Plugin.RightArmBlacked)
                     {
                         if (!SetRunAnim)

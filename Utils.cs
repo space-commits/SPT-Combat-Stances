@@ -3,7 +3,7 @@ using EFT;
 using EFT.InventoryLogic;
 
 
-namespace CombatOverhaul
+namespace CombatStances
 {
     public static class Utils
     {
@@ -80,6 +80,10 @@ namespace CombatOverhaul
                     if (player?.HandsController?.Item != null && player?.HandsController?.Item is Weapon)
                     {
                         Utils.WeaponReady = true;
+                    }
+                    else
+                    {
+                        Utils.WeaponReady = false;
                     }
                 }
             }

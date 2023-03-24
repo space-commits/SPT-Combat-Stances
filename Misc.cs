@@ -1,5 +1,4 @@
 ﻿using Aki.Reflection.Patching;
-using CombatOverhaul;
 using EFT.InventoryLogic;
 using EFT;
 using HarmonyLib;
