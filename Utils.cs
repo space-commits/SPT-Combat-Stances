@@ -1,7 +1,7 @@
 ﻿using Comfort.Common;
 using EFT;
 using EFT.InventoryLogic;
-
+using UnityEngine;
 
 namespace CombatStances
 {
@@ -97,7 +97,6 @@ namespace CombatStances
 
             return true;
         }
-
 
         public static void SafelyAddAttributeToList(ItemAttributeClass itemAttribute, Mod __instance)
         {
