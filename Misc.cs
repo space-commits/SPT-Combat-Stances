@@ -8,9 +8,30 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using Comfort.Common;
+using static EFT.Player;
 
 namespace CombatStances
 {
+
+    public class UpdateHipInaccuracyPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return typeof(EFT.Player.FirearmController).GetMethod("UpdateHipInaccuracy", BindingFlags.Instance | BindingFlags.Public);
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(ref Player.FirearmController __instance)
+        {
+            Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
+            if (player.IsYourPlayer == true)
+            {
+                Plugin.BaseHipfireAccuracy = player.ProceduralWeaponAnimation.Breath.HipPenalty;
+            }
+        }
+    }
+
+
     public class method_20Patch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()

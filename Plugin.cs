@@ -31,6 +31,8 @@ namespace CombatStances
         public static float RemainingArmStamPercentage = 1f;
         public static float ADSInjuryMulti;
 
+        public static float BaseHipfireAccuracy;
+
         public static float AimSpeed;
         public static float WeaponSkillErgo = 0f;
         public static float AimSkillADSBuff = 0f;
@@ -381,6 +383,7 @@ namespace CombatStances
             new RegisterShotPatch().Enable();
             new SyncWithCharacterSkillsPatch().Enable();
             new method_20Patch().Enable();
+            new UpdateHipInaccuracyPatch().Enable();
 
             new SetAimingPatch().Enable();
             new GetAimingPatch().Enable();
