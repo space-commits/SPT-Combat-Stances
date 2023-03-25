@@ -8,6 +8,7 @@ using HarmonyLib;
 using HarmonyLib.Tools;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
@@ -369,7 +370,7 @@ namespace CombatStances
                 if (isThirdPerson)
                 {
                     __instance.HandsContainer.HandsPosition.ReturnSpeed = Plugin.ThirdPistolPosSpeedMulti.Value * aimMulti;
-                   __instance.HandsContainer.HandsPosition.Zero = new Vector3(Plugin.ThirdPistolOffsetX.Value, Plugin.ThirdPistolOffsetY.Value, Plugin.ThirdPistolOffsetZ.Value);
+                    __instance.HandsContainer.HandsPosition.Zero = new Vector3(Plugin.ThirdPistolOffsetX.Value, Plugin.ThirdPistolOffsetY.Value, Plugin.ThirdPistolOffsetZ.Value);
                 }
 
                 if (__instance.HandsContainer.TrackingTransform.localPosition != Plugin.PistolTransformNewStartPosition)
@@ -382,14 +383,17 @@ namespace CombatStances
             {
                 __instance.CameraSmoothTime = 4f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                }
 
                 currentRotation = Quaternion.Lerp(currentRotation, pistolRevertQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.PistolResetRotationSpeedMulti.Value * aimMulti);
                 AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").SetValue(__instance, currentRotation);
 
                 __instance.HandsContainer.TrackingTransform.localPosition = Vector3.MoveTowards(__instance.HandsContainer.TrackingTransform.localPosition, Plugin.TransformBaseStartPosition, Plugin.PistolPosResetSpeedMulti.Value * aimMulti * dt);
             }
-            else if (__instance.HandsContainer.TrackingTransform.localPosition == Plugin.TransformBaseStartPosition)
+            else if (__instance.HandsContainer.TrackingTransform.localPosition == Plugin.TransformBaseStartPosition && !hasResetPistolPos)
             {
                 if (isThirdPerson)
                 {
@@ -400,7 +404,11 @@ namespace CombatStances
 
                 StanceController.PistolIsCompressed = false;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                }
+    
                 hasResetPistolPos = true;
             }
 
@@ -417,6 +425,12 @@ namespace CombatStances
                 AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").SetValue(__instance, aimMulti);
             }
 
+            float thirdPersonHighReadyRotationMulti = !isThirdPerson ? 1f : 2f;
+            float thirdPersonHighReadyAddMulti = !isThirdPerson ? 1f : 1.2f;
+            float thirdPersonLowReadyRotationMulti = !isThirdPerson ? 1f : 3f;
+            float thirdPersonLowReadyAddMulti = !isThirdPerson ? 1f : 2f;
+            float thirdPersonShortStockAddtMulti = !isThirdPerson ? 1f : 2f;
+
             bool isColliding = !__instance.OverlappingAllowsBlindfire;
             float collisionRotationFactor = isColliding ? 2f : 1f;
             float collisionPositionFactor = isColliding ? 2f : 1f;
@@ -427,19 +441,19 @@ namespace CombatStances
             Quaternion activeAimMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.ActiveAimAdditionalRotationX.Value * resetAimMulti, Plugin.ActiveAimAdditionalRotationY.Value * resetAimMulti, Plugin.ActiveAimAdditionalRotationZ.Value * resetAimMulti));
             Quaternion activeAimRevertQuaternion = Quaternion.Euler(activeAimRevertRotation);
 
-            Vector3 lowReadyTargetRotation = new Vector3(Plugin.LowReadyRotationX.Value * aimMulti * collisionRotationFactor, Plugin.LowReadyRotationY.Value * aimMulti, Plugin.LowReadyRotationZ.Value * aimMulti);
+            Vector3 lowReadyTargetRotation = new Vector3(Plugin.LowReadyRotationX.Value * aimMulti * collisionRotationFactor * thirdPersonLowReadyRotationMulti, Plugin.LowReadyRotationY.Value * aimMulti * thirdPersonLowReadyRotationMulti, Plugin.LowReadyRotationZ.Value * aimMulti);
             Quaternion lowReadyTargetQuaternion = Quaternion.Euler(lowReadyTargetRotation);
             Quaternion lowReadyMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.LowReadyAdditionalRotationX.Value * resetAimMulti, Plugin.LowReadyAdditionalRotationY.Value * resetAimMulti, Plugin.LowReadyAdditionalRotationZ.Value * resetAimMulti));
-            Quaternion lowReadyRevertQuaternion = Quaternion.Euler(Plugin.LowReadyResetRotationX.Value * resetAimMulti, Plugin.LowReadyResetRotationY.Value * resetAimMulti, Plugin.LowReadyResetRotationZ.Value * resetAimMulti);
+            Quaternion lowReadyRevertQuaternion = Quaternion.Euler(Plugin.LowReadyResetRotationX.Value * resetAimMulti * thirdPersonLowReadyAddMulti, Plugin.LowReadyResetRotationY.Value * resetAimMulti * thirdPersonLowReadyAddMulti, Plugin.LowReadyResetRotationZ.Value * resetAimMulti * thirdPersonLowReadyAddMulti);
 
-            Vector3 highReadyTargetRotation = new Vector3(Plugin.HighReadyRotationX.Value * aimMulti * collisionRotationFactor, Plugin.HighReadyRotationY.Value * aimMulti, Plugin.HighReadyRotationZ.Value * aimMulti);
+            Vector3 highReadyTargetRotation = new Vector3(Plugin.HighReadyRotationX.Value * aimMulti * collisionRotationFactor * thirdPersonHighReadyRotationMulti, Plugin.HighReadyRotationY.Value * aimMulti, Plugin.HighReadyRotationZ.Value * aimMulti);
             Quaternion highReadyTargetQuaternion = Quaternion.Euler(highReadyTargetRotation);
-            Quaternion highReadyMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.HighReadyAdditionalRotationX.Value * resetAimMulti, Plugin.HighReadyAdditionalRotationY.Value * resetAimMulti, Plugin.HighReadyAdditionalRotationZ.Value * resetAimMulti));
-            Quaternion highReadyRevertQuaternion = Quaternion.Euler(Plugin.HighReadyResetRotationX.Value * resetAimMulti, Plugin.HighReadyResetRotationY.Value * resetAimMulti, Plugin.HighReadyResetRotationZ.Value * resetAimMulti);
+            Quaternion highReadyMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.HighReadyAdditionalRotationX.Value * resetAimMulti * thirdPersonHighReadyAddMulti, Plugin.HighReadyAdditionalRotationY.Value * resetAimMulti * thirdPersonHighReadyAddMulti, Plugin.HighReadyAdditionalRotationZ.Value * resetAimMulti * thirdPersonHighReadyAddMulti));
+            Quaternion highReadyRevertQuaternion = Quaternion.Euler(Plugin.HighReadyResetRotationX.Value * resetAimMulti * thirdPersonHighReadyAddMulti, Plugin.HighReadyResetRotationY.Value * resetAimMulti * thirdPersonHighReadyAddMulti, Plugin.HighReadyResetRotationZ.Value * resetAimMulti * thirdPersonHighReadyAddMulti);
 
             Vector3 shortStockTargetRotation = new Vector3(Plugin.ShortStockRotationX.Value * aimMulti, Plugin.ShortStockRotationY.Value * aimMulti, Plugin.ShortStockRotationZ.Value * aimMulti);
             Quaternion shortStockTargetQuaternion = Quaternion.Euler(shortStockTargetRotation);
-            Quaternion shortStockMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.ShortStockAdditionalRotationX.Value * resetAimMulti, Plugin.ShortStockAdditionalRotationY.Value * resetAimMulti, Plugin.ShortStockAdditionalRotationZ.Value * resetAimMulti));
+            Quaternion shortStockMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.ShortStockAdditionalRotationX.Value * resetAimMulti * thirdPersonShortStockAddtMulti, Plugin.ShortStockAdditionalRotationY.Value * resetAimMulti * thirdPersonShortStockAddtMulti, Plugin.ShortStockAdditionalRotationZ.Value * resetAimMulti * thirdPersonShortStockAddtMulti));
             Quaternion shortStockRevertQuaternion = Quaternion.Euler(Plugin.ShortStockResetRotationX.Value * resetAimMulti, Plugin.ShortStockResetRotationY.Value * resetAimMulti, Plugin.ShortStockResetRotationZ.Value * resetAimMulti);
 
             //for setting baseline position
@@ -492,7 +506,10 @@ namespace CombatStances
             {
                 __instance.CameraSmoothTime = 4f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                }
 
                 isResettingShortStock = true;
 
@@ -510,7 +527,11 @@ namespace CombatStances
 
                 __instance.CameraSmoothTime = 8f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                }
+
                 isResettingShortStock = false;
                 hasResetShortStock = true;
             }
@@ -537,6 +558,7 @@ namespace CombatStances
 
                 if (StanceController.DoHighReadyInjuredAnim == true)
                 {
+
                     currentRotation = Quaternion.Lerp(currentRotation, highReadyTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.HighReadyRotationMulti.Value * 0.5f);
                     currentRotation = Quaternion.Lerp(currentRotation, highReadyMiniTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.HighReadyAdditionalRotationSpeedMulti.Value * 0.25f);
                     if (__instance.HandsContainer.TrackingTransform.localPosition != Plugin.HighTransformTargetPosition)
@@ -558,7 +580,14 @@ namespace CombatStances
                 if (isThirdPerson)
                 {
                     __instance.HandsContainer.HandsPosition.ReturnSpeed = Plugin.ThirdHighReadySpeedMulti.Value * aimMulti;
-                    __instance.HandsContainer.HandsPosition.Zero = new Vector3(Plugin.ThirdHighReadyOffsetX.Value, Plugin.ThirdHighReadyOffsetY.Value, Plugin.ThirdHighReadyOffsetZ.Value);
+                    if (!Plugin.IsSprinting)
+                    {
+                        __instance.HandsContainer.HandsPosition.Zero = new Vector3(Plugin.ThirdHighReadyOffsetX.Value, Plugin.ThirdHighReadyOffsetY.Value, Plugin.ThirdHighReadyOffsetZ.Value);
+                    }
+                    else 
+                    {
+                        __instance.HandsContainer.HandsPosition.Zero = new Vector3(Plugin.ThirdHighReadyOffsetX.Value, -0.2f, -0.025f);
+                    }
                 }
 
                 __instance.HandsContainer.TrackingTransform.localPosition = Vector3.MoveTowards(__instance.HandsContainer.TrackingTransform.localPosition, Plugin.HighTransformTargetPosition, aimMulti * dt * Plugin.HighReadySpeedMulti.Value * shortToHighMulti);
@@ -569,8 +598,10 @@ namespace CombatStances
             {
                 __instance.CameraSmoothTime = 4f;
 
-
-                __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                }
 
                 isResettingHighReady = true;
 
@@ -580,6 +611,7 @@ namespace CombatStances
             }
             else if (__instance.HandsContainer.TrackingTransform.localPosition == Plugin.TransformBaseStartPosition && !hasResetHighReady)
             {
+
                 if (isThirdPerson)
                 {
                     __instance.HandsContainer.HandsPosition.ReturnSpeed = 0.1f;
@@ -587,7 +619,10 @@ namespace CombatStances
 
                 __instance.CameraSmoothTime = 8f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                }
                 isResettingHighReady = false;
                 hasResetHighReady = true;
             }
@@ -601,9 +636,17 @@ namespace CombatStances
                 isResettingLowReady = false;
                 hasResetLowReady = false;
 
-                if ((!hasResetHighReady || !hasResetShortStock || !hasResetActiveAim) && __instance.HandsContainer.TrackingTransform.localPosition != Plugin.LowTransformTargetPosition)
+                if (__instance.HandsContainer.TrackingTransform.localPosition != Plugin.LowTransformTargetPosition)
                 {
-                    resetToLowReadySpeedMulti = 1.5f;
+                    if (!hasResetHighReady || !hasResetShortStock) 
+                    {
+                        resetToLowReadySpeedMulti = 1.5f;
+                    }
+                    if (!hasResetActiveAim) 
+                    {
+                        resetToLowReadySpeedMulti = 2f;
+                    }
+         
                 }
                 if (__instance.HandsContainer.TrackingTransform.localPosition == Plugin.LowTransformTargetPosition)
                 {
@@ -632,7 +675,10 @@ namespace CombatStances
             {
                 __instance.CameraSmoothTime = 4f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                }
 
                 isResettingLowReady = true;
 
@@ -650,7 +696,10 @@ namespace CombatStances
 
                 __instance.CameraSmoothTime = 8f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                }
                 isResettingLowReady = false;
                 hasResetLowReady = true;
             }
@@ -668,7 +717,7 @@ namespace CombatStances
 
                 if (!hasResetShortStock && __instance.HandsContainer.TrackingTransform.localPosition != Plugin.ActiveAimTransformTargetPosition)
                 {
-                    shortToActiveMulti = 1.7f;
+                    shortToActiveMulti = 2.3f;
                 }
                 if (__instance.HandsContainer.TrackingTransform.localPosition == Plugin.ActiveAimTransformTargetPosition)
                 {
@@ -695,7 +744,11 @@ namespace CombatStances
             {
                 __instance.CameraSmoothTime = 4f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                }
 
                 isResettingActiveAim = true;
 
@@ -714,11 +767,16 @@ namespace CombatStances
 
                 __instance.CameraSmoothTime = 8f;
 
-                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                if (!isThirdPerson)
+                {
+                    __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+                }
                 isResettingActiveAim = false;
                 hasResetActiveAim = true;
             }
         }
+
+        public static string[] botsToUseTacticalStances = { "sptBear", "sptUsec", "exUsec", "pmcBot", "bossKnight", "followerBigPipe", "followerBirdEye", "bossGluhar", "followerGluharAssault", "followerGluharScout", "followerGluharSecurity", "followerGluharSnipe"};
     }
 
 
@@ -886,6 +944,7 @@ namespace CombatStances
 
                 if (player.IsYourPlayer == true)
                 {
+
                     Quaternion currentRotation = (Quaternion)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").GetValue(__instance);
 
                     if (firearmController.Item.WeapClass == "pistol" && Plugin.EnableAltPistol.Value == true)
@@ -896,57 +955,86 @@ namespace CombatStances
                     {
                         StanceController.DoRifleStances(true, ref __instance, ref currentRotation, dt, ref isResettingShortStock, ref hasResetShortStock, ref hasResetLowReady, ref hasResetActiveAim, ref hasResetHighReady, ref isResettingHighReady, ref isResettingLowReady, ref isResettingActiveAim);
                     }
+      
                 }
                 else if (player.IsAI == true)
                 {
-
-
                     Quaternion currentRotation = (Quaternion)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").GetValue(__instance);
-                    float aimSpeed = (float)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").GetValue(__instance);
-                    float aimMulti = Mathf.Clamp(aimSpeed, 0.5f, 1f);
-                    float resetAimMulti = (1f - aimMulti) + 1f;
-                    float intensity = Mathf.Max(resetAimMulti, 1f);
 
-                    bool isColliding = !__instance.OverlappingAllowsBlindfire;
-                    float collisionRotationFactor = isColliding ? 2f : 1f;
-                    float collisionPositionFactor = isColliding ? 2f : 1f;
+                    float aimspeed = (float)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").GetValue(__instance);
+                    float aimMulti = Mathf.Clamp(aimspeed, 0.5f, 0.85f);
 
-                    Vector3 lowReadyTargetRotation = new Vector3(Plugin.LowReadyRotationX.Value * aimMulti * collisionRotationFactor, Plugin.LowReadyRotationY.Value * aimMulti, Plugin.LowReadyRotationZ.Value * aimMulti);
+                    if (!StanceController.IsIdle())
+                    {
+                        AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").SetValue(__instance, aimMulti);
+                    }
+
+                    Vector3 lowReadyTargetRotation = new Vector3(125.0f * aimMulti, 50.0f * aimMulti, -35.0f * aimMulti);
                     Quaternion lowReadyTargetQuaternion = Quaternion.Euler(lowReadyTargetRotation);
-                    Quaternion lowReadyMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.LowReadyAdditionalRotationX.Value * resetAimMulti, Plugin.LowReadyAdditionalRotationY.Value * resetAimMulti, Plugin.LowReadyAdditionalRotationZ.Value * resetAimMulti));
-                    Quaternion lowReadyRevertQuaternion = Quaternion.Euler(Plugin.LowReadyResetRotationX.Value * resetAimMulti, Plugin.LowReadyResetRotationY.Value * resetAimMulti, Plugin.LowReadyResetRotationZ.Value * resetAimMulti);
-                    Vector3 lowReadyTargetPosition = new Vector3(Plugin.LowReadyOffsetX.Value, Plugin.LowReadyOffsetY.Value, Plugin.LowReadyOffsetZ.Value);
+                    Vector3 lowReadyTargetPostion = new Vector3(0.04f, -0.05f, 0.0f);
 
-                    Logger.LogWarning("role = " + player.AIData.BotOwner.Profile.Info.Settings.Role);
 
-                    ////low ready////
-                    if (firearmController.Item.WeapClass != "pistol" && !__instance.IsAiming && !player.AIData.BotOwner.ShootData.Shooting && (Time.time - player.AIData.BotOwner.ShootData.LastTriggerPressd) > 10f && (Time.time - player.AIData.BotOwner.Memory.LastEnemyTimeSeen) > 1f)//&& player.AIData.BotOwner.Memory.IsPeace == true
+                    Vector3 highReadyTargetRotation = new Vector3(-90.0f * aimMulti, 0.0f * aimMulti, 15.0f * aimMulti);
+                    Quaternion highReadyTargetQuaternion = Quaternion.Euler(highReadyTargetRotation);
+                    Vector3 highReadyTargetPostion = new Vector3(0.05f, 0.04f, -0.1f);
+
+
+                    if (firearmController.Item.WeapClass != "pistol")
                     {
-                        currentRotation = Quaternion.Lerp(currentRotation, lowReadyTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.LowReadyRotationMulti.Value);
-                        if (__instance.HandsContainer.TrackingTransform.localPosition != lowReadyTargetPosition)
+                        ////low ready//// 
+                        if ((player.AIData.BotOwner.Memory.IsPeace == true || !StanceController.botsToUseTacticalStances.Contains(player.AIData.BotOwner.Profile.Info.Settings.Role.ToString()) && !player.IsSprintEnabled && !__instance.IsAiming && !player.AIData.BotOwner.ShootData.Shooting && (Time.time - player.AIData.BotOwner.ShootData.LastTriggerPressd) > 20f)) //&& player.AIData.BotOwner.Memory.IsPeace == true && && (Time.time - player.AIData.BotOwner.Memory.LastEnemyTimeSeen) > 1f
                         {
-                            currentRotation = Quaternion.Lerp(currentRotation, lowReadyMiniTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.LowReadyAdditionalRotationSpeedMulti.Value);
+                            currentRotation = Quaternion.Lerp(currentRotation, lowReadyTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.LowReadyRotationMulti.Value);
+                            AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").SetValue(__instance, currentRotation);
+                            __instance.HandsContainer.HandsPosition.Zero = lowReadyTargetPostion;
                         }
-                        AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").SetValue(__instance, currentRotation);
-                        __instance.HandsContainer.TrackingTransform.localPosition = Vector3.MoveTowards(__instance.HandsContainer.TrackingTransform.localPosition, lowReadyTargetPosition, aimMulti * dt * Plugin.LowReadySpeedMulti.Value);
+
+
+                        ////high ready////
+                        if (!player.AIData.BotOwner.Memory.IsPeace && StanceController.botsToUseTacticalStances.Contains(player.AIData.BotOwner.Profile.Info.Settings.Role.ToString()) && !__instance.IsAiming && !player.AIData.BotOwner.ShootData.Shooting && (Time.time - player.AIData.BotOwner.ShootData.LastTriggerPressd) > 20f)//&& player.AIData.BotOwner.Memory.IsPeace == true && && (Time.time - player.AIData.BotOwner.Memory.LastEnemyTimeSeen) > 1f
+                        {
+                            player.BodyAnimatorCommon.SetFloat(GClass1645.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2);
+
+                            currentRotation = Quaternion.Lerp(currentRotation, highReadyTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.HighReadyRotationMulti.Value);
+                            AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").SetValue(__instance, currentRotation);
+                            __instance.HandsContainer.HandsPosition.Zero = highReadyTargetPostion;
+                        }
+                        else
+                        {
+                            player.BodyAnimatorCommon.SetFloat(GClass1645.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)firearmController.Item.CalculateCellSize().X);
+                        }
+
+                        ////peaceful positon//// (player.AIData.BotOwner.Memory.IsPeace == true && !StanceController.botsToUseTacticalStances.Contains(player.AIData.BotOwner.Profile.Info.Settings.Role.ToString()) && !player.IsSprintEnabled && !__instance.IsAiming && !player.AIData.BotOwner.ShootData.Shooting && (Time.time - player.AIData.BotOwner.ShootData.LastTriggerPressd) > 20f)
                     }
-                    else if (__instance.HandsContainer.TrackingTransform.localPosition != Plugin.TransformBaseStartPosition)
+                    else 
                     {
+                        //peaceful pistol stance
+                        Vector3 peacefulPistolTargetRotation = new Vector3(15.0f, -15.0f, 15.0f);
+                        Quaternion peacefulPistolTargetQuaternion = Quaternion.Euler(peacefulPistolTargetRotation);
+                        Vector3 peacefulPistolTargetPosition = new Vector3(-0.1f, 0.15f, -0.12f);
 
-                        __instance.HandsContainer.HandsRotation.InputIntensity = intensity;
+                        //tactical pistol stance
+                        Vector3 tacPistolTargetRotation = new Vector3(Plugin.PistolRotationX.Value, Plugin.PistolRotationY.Value, Plugin.PistolRotationZ.Value);
+                        Quaternion tacPistolTargetQuaternion = Quaternion.Euler(peacefulPistolTargetRotation);
+                        Vector3 tacPistolTargetPosition = new Vector3(Plugin.ThirdPistolOffsetX.Value, Plugin.ThirdPistolOffsetY.Value, Plugin.ThirdPistolOffsetZ.Value);
 
 
-                        currentRotation = Quaternion.Lerp(currentRotation, lowReadyRevertQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.LowReadyResetRotationMulti.Value);
-                        AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").SetValue(__instance, currentRotation);
+                        if ((player.AIData.BotOwner.Memory.IsPeace == true || !StanceController.botsToUseTacticalStances.Contains(player.AIData.BotOwner.Profile.Info.Settings.Role.ToString())) && !player.IsSprintEnabled && !__instance.IsAiming && !player.AIData.BotOwner.ShootData.Shooting && (Time.time - player.AIData.BotOwner.ShootData.LastTriggerPressd) > 20f)
+                        {
+                            currentRotation = Quaternion.Lerp(currentRotation, peacefulPistolTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.PistolRotationSpeedMulti.Value * aimMulti);
+                            AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").SetValue(__instance, currentRotation);
 
-                        __instance.HandsContainer.TrackingTransform.localPosition = Vector3.MoveTowards(__instance.HandsContainer.TrackingTransform.localPosition, Plugin.TransformBaseStartPosition, aimMulti * dt * Plugin.LowReadyResetSpeedMulti.Value);
+                            __instance.HandsContainer.HandsPosition.Zero = peacefulPistolTargetPosition;
+                        }
+
+                        if (StanceController.botsToUseTacticalStances.Contains(player.AIData.BotOwner.Profile.Info.Settings.Role.ToString()) && !player.IsSprintEnabled && !__instance.IsAiming && !player.AIData.BotOwner.ShootData.Shooting && (Time.time - player.AIData.BotOwner.ShootData.LastTriggerPressd) > 20f)
+                        {
+                            currentRotation = Quaternion.Lerp(currentRotation, tacPistolTargetQuaternion, __instance.CameraSmoothTime * aimMulti * dt * Plugin.PistolRotationSpeedMulti.Value * aimMulti);
+                            AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_1").SetValue(__instance, currentRotation);
+
+                            __instance.HandsContainer.HandsPosition.Zero = tacPistolTargetPosition;
+                        }
                     }
-                    else if (__instance.HandsContainer.TrackingTransform.localPosition == Plugin.TransformBaseStartPosition && !hasResetLowReady)
-                    {
-                        __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
-                    }
-                     
-
                 }
             }
             return true;
@@ -1010,8 +1098,6 @@ namespace CombatStances
         [PatchPostfix]
         private static void PatchPostfix(EFT.Animations.ProceduralWeaponAnimation __instance)
         {
-
-
             Player.FirearmController firearmController = (Player.FirearmController)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "firearmController_0").GetValue(__instance);
 
             if (firearmController != null)

@@ -53,15 +53,6 @@ namespace CombatStances
 
         private static bool IsAllowedADSWithFS(Weapon weapon, Player.FirearmController fc) 
         {
-            if (weapon.WeapClass == "pistol" && (float)weapon.CalculateCellSize().X < 3 && !fc.IsSilenced) 
-            {
-                return true;
-            }
-            if (weapon.Folded == true)
-            {
-                return true;
-            }
-
             if (weapon.CompactHandling)
             {
                 bool flag = false;
@@ -93,6 +84,12 @@ namespace CombatStances
                 flag |= Enumerable.Any<ProtrudableComponent>(enumerable2, new Func<ProtrudableComponent, bool>(checkProtruding));
                 return !flag;
             }
+
+            if (weapon.WeapClass == "pistol")
+            {
+                return true;
+            }
+
             return false;
         }
 

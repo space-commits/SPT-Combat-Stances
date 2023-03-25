@@ -92,7 +92,7 @@ namespace CombatStances
             if (Utils.CheckIsReady() == true && __instance.IsYourPlayer == true)
             {
                 Player.FirearmController fc = __instance.HandsController as Player.FirearmController;
-                PlayerInjuryStateCheck(__instance, Logger);
+                PlayerInjuryStateCheck(__instance);
                 Plugin.IsSprinting = __instance.IsSprintEnabled;
 
                 if (fc != null)
@@ -114,7 +114,7 @@ namespace CombatStances
         }
 
 
-        public static void PlayerInjuryStateCheck(Player player, ManualLogSource logger)
+        public static void PlayerInjuryStateCheck(Player player)
         {
             bool rightArmDamaged = player.MovementContext.PhysicalConditionIs(EPhysicalCondition.RightArmDamaged);
             bool leftArmDamaged = player.MovementContext.PhysicalConditionIs(EPhysicalCondition.LeftArmDamaged);
