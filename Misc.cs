@@ -13,6 +13,7 @@ using static EFT.Player;
 namespace CombatStances
 {
 
+
     public class UpdateHipInaccuracyPatch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()

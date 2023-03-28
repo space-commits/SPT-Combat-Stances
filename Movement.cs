@@ -95,8 +95,11 @@ namespace CombatStances
                 PlayerInjuryStateCheck(__instance);
                 Plugin.IsSprinting = __instance.IsSprintEnabled;
 
+
                 if (fc != null)
                 {
+                    AimController.ADSCheck(__instance, fc);
+
                     if (Plugin.EnableStanceStamChanges.Value == true)
                     {
                         StanceController.SetStanceStamina(__instance, fc);

@@ -16,42 +16,21 @@ using UnityEngine;
 namespace CombatStances
 {
 
-    public class SetAimingPatch : ModulePatch
+    public static class AimController
     {
-        protected override MethodBase GetTargetMethod()
-        {
-            return typeof(EFT.Player.FirearmController).GetMethod("set_IsAiming", BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
-        [PatchPostfix]
-        private static void PatchPostfix(EFT.Player.FirearmController __instance, bool value, ref bool ____isAiming)
-        {
-            Player player = (Player)AccessTools.Field(typeof(EFT.Player.ItemHandsController), "_player").GetValue(__instance);
-            if (__instance.Item.WeapClass == "pistol")
-            {
-                player.Physical.Aim((!____isAiming || !(player.MovementContext.StationaryWeapon == null)) ? 0f : __instance.ErgonomicWeight * 0.2f);
-            }
-        }
-    }
-
-    public class GetAimingPatch : ModulePatch
-    {
-        protected override MethodBase GetTargetMethod()
-        {
-            return typeof(EFT.Player.FirearmController).GetMethod("get_IsAiming", BindingFlags.Public | BindingFlags.Instance);
-        }
-
         private static bool SetCanAds = false;
         private static bool SetActiveAimADS = false;
         private static bool SetRunAnim = false;
         private static bool ResetRunAnim = false;
+
+        private static bool wasToggled = false;
 
         private static bool checkProtruding(ProtrudableComponent x)
         {
             return x.IsProtruding();
         }
 
-        private static bool IsAllowedADSWithFS(Weapon weapon, Player.FirearmController fc) 
+        private static bool IsAllowedADSWithFS(Weapon weapon, Player.FirearmController fc)
         {
             if (weapon.CompactHandling)
             {
@@ -93,85 +72,115 @@ namespace CombatStances
             return false;
         }
 
-        [PatchPostfix]
-        private static void PatchPostfix(EFT.Player.FirearmController __instance, ref bool ____isAiming)
+        public static void ADSCheck(Player player, EFT.Player.FirearmController fc)
         {
-            if (Utils.IsReady == true)
+            if (!player.IsAI && fc.Item != null)
             {
-                Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
-                if (!player.IsAI && __instance.Item != null)
+                bool isAiming = (bool)AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").GetValue(fc);
+                FaceShieldComponent fsComponent = player.FaceShieldObserver.Component;
+                NightVisionComponent nvgComponent = player.NightVisionObserver.Component;
+                bool fsIsON = fsComponent != null && (fsComponent.Togglable == null || fsComponent.Togglable.On);
+                bool nvgIsOn = nvgComponent != null && (nvgComponent.Togglable == null || nvgComponent.Togglable.On);
+                bool isAllowedADSFS = IsAllowedADSWithFS(fc.Item, fc);
+                if ((Plugin.EnableNVGPatch.Value == true && nvgIsOn == true && Plugin.HasOptic) || (Plugin.EnableFSPatch.Value == true && (fsIsON && !isAllowedADSFS)))
                 {
-                    FaceShieldComponent fsComponent = player.FaceShieldObserver.Component;
-                    NightVisionComponent nvgComponent = player.NightVisionObserver.Component;
-                    bool fsIsON = fsComponent != null && (fsComponent.Togglable == null || fsComponent.Togglable.On);
-                    bool nvgIsOn = nvgComponent != null && (nvgComponent.Togglable == null || nvgComponent.Togglable.On);
-                    bool isAllowedADSFS = IsAllowedADSWithFS(__instance.Item, __instance);
-                    if ((Plugin.EnableNVGPatch.Value == true && nvgIsOn == true && Plugin.HasOptic) || (Plugin.EnableFSPatch.Value == true && (fsIsON && !isAllowedADSFS)))
+                    if (!SetCanAds)
                     {
-                        if (!SetCanAds)
-                        {
-                            Plugin.IsAllowedADS = false;
-                            player.MovementContext.SetAimingSlowdown(false, 0.33f);
-                            player.ProceduralWeaponAnimation.IsAiming = false;
-                            SetCanAds = true;
-                        }
+                        Plugin.IsAllowedADS = false;
+                        player.ProceduralWeaponAnimation.IsAiming = false;
+                        AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
+                        SetCanAds = true;
                     }
-                    else
-                    {
-                        Plugin.IsAllowedADS = true;
-                        SetCanAds = false;
-                    }
+                }
+                else
+                {
+                    Plugin.IsAllowedADS = true;
+                    SetCanAds = false;
+                }
 
-                    if (StanceController.IsActiveAiming == true)
+                if (StanceController.IsActiveAiming == true)
+                {
+                    if (!SetActiveAimADS)
                     {
-                        if (!SetActiveAimADS)
-                        {
-                            Plugin.IsAllowedADS = false;
-                            player.ProceduralWeaponAnimation.IsAiming = false;
-                            player.MovementContext.SetAimingSlowdown(true, 0.33f);
-                            SetActiveAimADS = true;
-                        }
-
-                    }
-                    if (!StanceController.IsActiveAiming && !____isAiming)
-                    {
-                        player.MovementContext.SetAimingSlowdown(false, 0.33f);
-                        SetActiveAimADS = false;
-                    }
-
-                    if ((StanceController.IsHighReady == true || StanceController.WasHighReady == true) && !Plugin.RightArmBlacked)
-                    {
-                        if (!SetRunAnim)
-                        {
-                            player.BodyAnimatorCommon.SetFloat(GClass1645.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
-
-                            SetRunAnim = true;
-                            ResetRunAnim = false;
-                        }
-
-                    }
-                    else
-                    {
-                        if (!ResetRunAnim)
-                        {
-                            player.BodyAnimatorCommon.SetFloat(GClass1645.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)__instance.Item.CalculateCellSize().X);
-                            ResetRunAnim = true;
-                            SetRunAnim = false;
-                        }
-
-                    }
-
-                    if (player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire == true)
-                    {
-                        Plugin.IsAiming = ____isAiming;
-                        StanceController.PistolIsColliding = false;
-                    }
-                    else if (__instance.Item.WeapClass == "pistol")
-                    {
-                        StanceController.PistolIsColliding = true;
+                        Plugin.IsAllowedADS = false;
+                        player.ProceduralWeaponAnimation.IsAiming = false;
+                        AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
+                        player.MovementContext.SetAimingSlowdown(true, 0.33f);
+                        SetActiveAimADS = true;
                     }
 
                 }
+                if (!StanceController.IsActiveAiming && !isAiming)
+                {
+                    player.MovementContext.SetAimingSlowdown(false, 0.33f);
+                    SetActiveAimADS = false;
+                }
+
+                if (!wasToggled && (fsIsON == true || nvgIsOn == true))
+                {
+                    wasToggled = true;
+                }
+                if (wasToggled == true && (!fsIsON && !nvgIsOn))
+                {
+                    StanceController.WasActiveAim = false;
+                    if (Plugin.ToggleActiveAim.Value == true)
+                    {
+                        StanceController.IsActiveAiming = false;
+                    }
+                    wasToggled = false;
+                }
+
+
+                if ((StanceController.IsHighReady == true || StanceController.WasHighReady == true) && !Plugin.RightArmBlacked)
+                {
+                    if (!SetRunAnim)
+                    {
+                        player.BodyAnimatorCommon.SetFloat(GClass1645.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
+
+                        SetRunAnim = true;
+                        ResetRunAnim = false;
+                    }
+
+                }
+                else
+                {
+                    if (!ResetRunAnim)
+                    {
+                        player.BodyAnimatorCommon.SetFloat(GClass1645.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
+                        ResetRunAnim = true;
+                        SetRunAnim = false;
+                    }
+
+                }
+
+                if (player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire == true)
+                {
+                    Plugin.IsAiming = isAiming;
+                    StanceController.PistolIsColliding = false;
+                }
+                else if (fc.Item.WeapClass == "pistol")
+                {
+                    StanceController.PistolIsColliding = true;
+                }
+
+            }
+        }
+    }
+
+    public class SetAimingPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return typeof(EFT.Player.FirearmController).GetMethod("set_IsAiming", BindingFlags.NonPublic | BindingFlags.Instance);
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(EFT.Player.FirearmController __instance, bool value, ref bool ____isAiming)
+        {
+            Player player = (Player)AccessTools.Field(typeof(EFT.Player.ItemHandsController), "_player").GetValue(__instance);
+            if (__instance.Item.WeapClass == "pistol")
+            {
+                player.Physical.Aim((!____isAiming || !(player.MovementContext.StationaryWeapon == null)) ? 0f : __instance.ErgonomicWeight * 0.2f);
             }
         }
     }

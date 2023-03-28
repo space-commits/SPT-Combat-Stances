@@ -386,9 +386,7 @@ namespace CombatStances
             new UpdateHipInaccuracyPatch().Enable();
 
             new SetAimingPatch().Enable();
-            new GetAimingPatch().Enable();
             new ToggleAimPatch().Enable();
-
 
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }
