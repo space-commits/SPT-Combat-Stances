@@ -72,7 +72,7 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(Player.FirearmController), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
-                SkillsClass.GClass1678 skillsClass = (SkillsClass.GClass1678)AccessTools.Field(typeof(EFT.Player.FirearmController), "gclass1678_0").GetValue(__instance);
+                SkillsClass.GClass1681 skillsClass = (SkillsClass.GClass1681)AccessTools.Field(typeof(EFT.Player.FirearmController), "gclass1681_0").GetValue(__instance);
                 Plugin.WeaponSkillErgo = skillsClass.DeltaErgonomics;
                 Plugin.AimSkillADSBuff = skillsClass.AimSpeed;
             }

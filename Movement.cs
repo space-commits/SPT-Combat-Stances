@@ -18,11 +18,11 @@ namespace CombatStances
     {
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(GClass1601).GetMethod("SetAimingSlowdown", BindingFlags.Instance | BindingFlags.Public);
+            return typeof(GClass1604).GetMethod("SetAimingSlowdown", BindingFlags.Instance | BindingFlags.Public);
         }
 
         [PatchPrefix]
-        private static bool Prefix(ref GClass1601 __instance, bool isAiming, float slow)
+        private static bool Prefix(ref GClass1604 __instance, bool isAiming, float slow)
         {
 
             Player player = (Player)AccessTools.Field(typeof(GClass1601), "player_0").GetValue(__instance);
@@ -48,17 +48,17 @@ namespace CombatStances
     {
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(GClass1601).GetMethod("SprintAcceleration", BindingFlags.Instance | BindingFlags.Public);
+            return typeof(GClass1604).GetMethod("SprintAcceleration", BindingFlags.Instance | BindingFlags.Public);
         }
 
         [PatchPrefix]
-        private static bool Prefix(GClass1601 __instance, float deltaTime)
+        private static bool Prefix(GClass1604 __instance, float deltaTime)
         {
             Player player = (Player)AccessTools.Field(typeof(GClass1601), "player_0").GetValue(__instance);
 
             if (player.IsYourPlayer == true)
             {
-                GClass753 rotationFrameSpan = (GClass753)AccessTools.Field(typeof(GClass1601), "gclass753_0").GetValue(__instance);
+                GClass755 rotationFrameSpan = (GClass755)AccessTools.Field(typeof(GClass1601), "gclass755_0").GetValue(__instance);
                 float highReadySpeedBonus = StanceController.IsHighReady ? 1.15f : 1f;
                 float highReadyAccelBonus = StanceController.IsHighReady ? 2f : 1f;
                 float lowReadyAccelBonus = StanceController.IsLowReady ? 1.25f : 1f;
