@@ -162,6 +162,7 @@ namespace CombatStances
                         IsLowReady = false;
                         IsShortStock = false;
                         IsActiveAiming = false;
+                        WasActiveAim = false;
                         WasHighReady = false;
                         WasLowReady = false;
                         WasShortStock = false;
@@ -792,6 +793,28 @@ namespace CombatStances
         }
     }
 
+    public class SetFireModePatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return typeof(FirearmsAnimator).GetMethod("SetFireMode", BindingFlags.Instance | BindingFlags.Public);
+        }
+
+        [PatchPrefix]
+        private static bool Prefix(FirearmsAnimator __instance, Weapon.EFireMode fireMode, bool skipAnimation = false)
+        {
+
+            __instance.ResetLeftHand();
+            skipAnimation = StanceController.IsHighReady && Plugin.IsSprinting ? true : skipAnimation;
+            WeaponAnimationSpeedControllerClass.SetFireMode(__instance.Animator, (float)fireMode);
+            if (!skipAnimation)
+            {
+                WeaponAnimationSpeedControllerClass.TriggerFiremodeSwitch(__instance.Animator);
+            }
+            return false;
+        }
+    }
+
 
     public class OnWeaponDrawPatch : ModulePatch
     {
@@ -982,7 +1005,7 @@ namespace CombatStances
                     Quaternion highReadyTargetQuaternion = Quaternion.Euler(highReadyTargetRotation);
                     Vector3 highReadyTargetPostion = new Vector3(0.05f, 0.04f, -0.1f);
 
-                    Vector3 activeAimTargetRotation = new Vector3(0.0f, -150.0f, 0.0f);
+                    Vector3 activeAimTargetRotation = new Vector3(0.0f, -90.0f, 0.0f);
                     Quaternion activeAimTargetQuaternion = Quaternion.Euler(activeAimTargetRotation);
                     Vector3 activeAimTargetPostion = new Vector3(0.0f, -0.025f, 0.0f);
 

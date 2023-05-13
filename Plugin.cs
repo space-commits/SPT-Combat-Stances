@@ -388,6 +388,8 @@ namespace CombatStances
             new SetAimingPatch().Enable();
             new ToggleAimPatch().Enable();
 
+            new SetFireModePatch().Enable();
+
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }
 
