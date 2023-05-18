@@ -43,6 +43,8 @@ namespace CombatStances
         public static int ShotCount = 0;
         public static int PrevShotCount = ShotCount;
 
+        public static bool IsInInventory = false;
+
         public static Vector3 BaseWeaponRootAnimPostion;
         public static Vector3 TransformBaseStartPosition;
         public static Vector3 WeaponOffsetPosition;

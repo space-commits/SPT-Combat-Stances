@@ -94,7 +94,7 @@ namespace CombatStances
                 Player.FirearmController fc = __instance.HandsController as Player.FirearmController;
                 PlayerInjuryStateCheck(__instance);
                 Plugin.IsSprinting = __instance.IsSprintEnabled;
-
+                Plugin.IsInInventory = __instance.IsInventoryOpened;
 
                 if (fc != null)
                 {
