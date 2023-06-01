@@ -37,7 +37,7 @@ namespace CombatStances
                 bool flag = false;
                 IEnumerable<ProtrudableComponent> enumerable = Enumerable.Empty<ProtrudableComponent>();
                 FoldableComponent foldableComponent;
-                if (GClass2429.CanFold(weapon, out foldableComponent))
+                if (GClass2428.CanFold(weapon, out foldableComponent))
                 {
                     if (foldableComponent.FoldedSlot == null)
                     {
@@ -135,7 +135,7 @@ namespace CombatStances
                 {
                     if (!SetRunAnim)
                     {
-                        player.BodyAnimatorCommon.SetFloat(GClass1648.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
+                        player.BodyAnimatorCommon.SetFloat(GClass1647.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
 
                         SetRunAnim = true;
                         ResetRunAnim = false;
@@ -146,7 +146,7 @@ namespace CombatStances
                 {
                     if (!ResetRunAnim)
                     {
-                        player.BodyAnimatorCommon.SetFloat(GClass1648.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
+                        player.BodyAnimatorCommon.SetFloat(GClass1647.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
                         ResetRunAnim = true;
                         SetRunAnim = false;
                     }
