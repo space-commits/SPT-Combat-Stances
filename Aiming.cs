@@ -18,12 +18,9 @@ namespace CombatStances
 
     public static class AimController
     {
-        private static bool SetCanAds = false;
-        private static bool SetActiveAimADS = false;
-        private static bool SetRunAnim = false;
-        private static bool ResetRunAnim = false;
-
+        private static bool hasSetActiveAimADS = false;
         private static bool wasToggled = false;
+        private static bool hasSetCanAds = false;
 
         private static bool checkProtruding(ProtrudableComponent x)
         {
@@ -82,78 +79,60 @@ namespace CombatStances
                 bool fsIsON = fsComponent != null && (fsComponent.Togglable == null || fsComponent.Togglable.On);
                 bool nvgIsOn = nvgComponent != null && (nvgComponent.Togglable == null || nvgComponent.Togglable.On);
                 bool isAllowedADSFS = IsAllowedADSWithFS(fc.Item, fc);
-                if ((Plugin.EnableNVGPatch.Value == true && nvgIsOn == true && Plugin.HasOptic) || (Plugin.EnableFSPatch.Value == true && (fsIsON && !isAllowedADSFS)))
+                if ((Plugin.EnableNVGPatch.Value && nvgIsOn && Plugin.HasOptic) || (Plugin.EnableFSPatch.Value && (fsIsON && !isAllowedADSFS)))
                 {
-                    if (!SetCanAds)
+                    if (!hasSetCanAds)
                     {
                         Plugin.IsAllowedADS = false;
                         player.ProceduralWeaponAnimation.IsAiming = false;
                         AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
-                        SetCanAds = true;
+                        hasSetCanAds = true;
                     }
                 }
                 else
                 {
                     Plugin.IsAllowedADS = true;
-                    SetCanAds = false;
+                    hasSetCanAds = false;
                 }
 
-                if (StanceController.IsActiveAiming == true)
+                if (StanceController.IsActiveAiming && !isAiming)
                 {
-                    if (!SetActiveAimADS)
+                    if (!hasSetActiveAimADS)
                     {
                         Plugin.IsAllowedADS = false;
                         player.ProceduralWeaponAnimation.IsAiming = false;
                         AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
                         player.MovementContext.SetAimingSlowdown(true, 0.33f);
-                        SetActiveAimADS = true;
+                        hasSetActiveAimADS = true;
                     }
 
                 }
-                if (!StanceController.IsActiveAiming && !isAiming)
+                if (!StanceController.IsActiveAiming && hasSetActiveAimADS)
                 {
                     player.MovementContext.SetAimingSlowdown(false, 0.33f);
-                    SetActiveAimADS = false;
+                    hasSetActiveAimADS = false;
                 }
 
-                if (!wasToggled && (fsIsON == true || nvgIsOn == true))
+                if (isAiming)
+                {
+                    player.MovementContext.SetAimingSlowdown(true, 0.33f);
+                }
+
+                if (!wasToggled && (fsIsON || nvgIsOn))
                 {
                     wasToggled = true;
                 }
                 if (wasToggled == true && (!fsIsON && !nvgIsOn))
                 {
                     StanceController.WasActiveAim = false;
-                    if (Plugin.ToggleActiveAim.Value == true)
+                    if (Plugin.ToggleActiveAim.Value)
                     {
                         StanceController.IsActiveAiming = false;
                     }
                     wasToggled = false;
                 }
 
-
-                if ((StanceController.IsHighReady == true || StanceController.WasHighReady == true) && !Plugin.RightArmBlacked)
-                {
-                    if (!SetRunAnim)
-                    {
-                        player.BodyAnimatorCommon.SetFloat(GClass1647.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
-
-                        SetRunAnim = true;
-                        ResetRunAnim = false;
-                    }
-
-                }
-                else
-                {
-                    if (!ResetRunAnim)
-                    {
-                        player.BodyAnimatorCommon.SetFloat(GClass1647.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
-                        ResetRunAnim = true;
-                        SetRunAnim = false;
-                    }
-
-                }
-
-                if (player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire == true)
+                if (player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire)
                 {
                     Plugin.IsAiming = isAiming;
                     StanceController.PistolIsColliding = false;
@@ -196,7 +175,7 @@ namespace CombatStances
         private static bool Prefix(EFT.Player.FirearmController __instance)
         {
             Player player = (Player)AccessTools.Field(typeof(EFT.Player.ItemHandsController), "_player").GetValue(__instance);
-            if ((Plugin.EnableFSPatch.Value == true || Plugin.EnableNVGPatch.Value == true) && !player.IsAI)
+            if ((Plugin.EnableFSPatch.Value || Plugin.EnableNVGPatch.Value) && !player.IsAI)
             {
                 return Plugin.IsAllowedADS;
             }

@@ -39,32 +39,10 @@ namespace CombatStances
         public static string TacticalCombo = "55818b164bdc2ddc698b456c";
         public static string UBGL = "55818b014bdc2ddc698b456b";
 
-        public static LightComponent GetLightComponent(LightComponent x)
+        public static Player GetPlayer()
         {
-            return x;
-        }
-
-        public static string GetLightId(LightComponent x)
-        {
-            return x.Item.Id;
-        }
-
-        public static Item GetContainedItem(Slot slot)
-        {
-            return slot.ContainedItem;
-        }
-
-
-        public static bool NullCheck(string[] confItemArray)
-        {
-            if (confItemArray != null && confItemArray.Length > 0)
-            {
-                if (confItemArray[0] == "SPTRM") // if the array has SPTRM, but is set up incorrectly, it will probably cause null errors
-                {
-                    return false;
-                }
-            }
-            return true;
+            GameWorld gameWorld = Singleton<GameWorld>.Instance;
+            return gameWorld.AllPlayers[0] != null ? gameWorld.AllPlayers[0] : null;
         }
 
         public static bool CheckIsReady()
@@ -94,16 +72,23 @@ namespace CombatStances
                 return false;
             }
             Utils.IsReady = true;
-
             return true;
         }
 
-        public static void SafelyAddAttributeToList(ItemAttributeClass itemAttribute, Mod __instance)
+        public static bool IsInHideout()
         {
-            if (itemAttribute.Base() != 0f)
+            GameWorld gameWorld = Singleton<GameWorld>.Instance;
+            SessionResultPanel sessionResultPanel = Singleton<SessionResultPanel>.Instance;
+
+            if (gameWorld?.AllPlayers.Count > 0)
             {
-                __instance.Attributes.Add(itemAttribute);
+                Player player = gameWorld.AllPlayers[0];
+                if (player != null && player is HideoutPlayer)
+                {
+                    return true;
+                }
             }
+            return false;
         }
 
         public static bool IsSight(Mod mod)

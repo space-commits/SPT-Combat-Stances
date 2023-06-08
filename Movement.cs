@@ -32,7 +32,7 @@ namespace CombatStances
                 {
                     //slow is hard set to 0.33 when called, 0.4-0.43 feels best.
                     float baseSpeed = slow + 0.07f - Plugin.AimMoveSpeedInjuryReduction;
-                    float totalSpeed = StanceController.IsActiveAiming ? baseSpeed * 1.3f : baseSpeed;
+                    float totalSpeed = StanceController.IsActiveAiming ? baseSpeed * 1.45f : baseSpeed;
                     __instance.AddStateSpeedLimit(Math.Max(totalSpeed, 0.15f), Player.ESpeedLimit.Aiming);
 
                     return false;
@@ -59,23 +59,18 @@ namespace CombatStances
             if (player.IsYourPlayer == true)
             {
                 GClass755 rotationFrameSpan = (GClass755)AccessTools.Field(typeof(GClass1603), "gclass755_0").GetValue(__instance);
-                float highReadySpeedBonus = StanceController.IsHighReady ? 1.15f : 1f;
-                float highReadyAccelBonus = StanceController.IsHighReady ? 2f : 1f;
-                float lowReadyAccelBonus = StanceController.IsLowReady ? 1.25f : 1f;
-                float shortStockPenalty = StanceController.IsShortStock ? 0.9f : 1f;
+                float stanceAccelBonus = StanceController.IsShortStock ? 0.9f : StanceController.IsLowReady ? 1.3f : StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.7f : StanceController.IsHighReady ? 1.3f : 1f;
+                float stanceSpeedBonus = StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.15f : 1f;
 
-                float sprintAccel = player.Physical.SprintAcceleration * deltaTime * lowReadyAccelBonus * highReadyAccelBonus * shortStockPenalty;
-                float speed = (player.Physical.SprintSpeed * __instance.SprintingSpeed + 1f) * __instance.StateSprintSpeedLimit * highReadySpeedBonus;
+                float sprintAccel = player.Physical.SprintAcceleration * deltaTime * stanceAccelBonus;
+                float speed = (player.Physical.SprintSpeed * __instance.SprintingSpeed + 1f) * __instance.StateSprintSpeedLimit * stanceSpeedBonus;
                 float sprintInertia = Mathf.Max(EFTHardSettings.Instance.sprintSpeedInertiaCurve.Evaluate(Mathf.Abs((float)rotationFrameSpan.Average)), EFTHardSettings.Instance.sprintSpeedInertiaCurve.Evaluate(2.1474836E+09f) * (2f - player.Physical.Inertia));
                 speed = Mathf.Clamp(speed * sprintInertia, 0.1f, speed);
                 __instance.SprintSpeed = Mathf.Clamp(__instance.SprintSpeed + sprintAccel * Mathf.Sign(speed - __instance.SprintSpeed), 0.01f, speed);
 
                 return false;
             }
-            else
-            {
-                return true;
-            }
+            return true;
         }
     }
 
