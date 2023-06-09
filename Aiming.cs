@@ -128,6 +128,7 @@ namespace CombatStances
                     if (Plugin.ToggleActiveAim.Value)
                     {
                         StanceController.IsActiveAiming = false;
+                        Plugin.StanceBlender.Target = 0f;
                     }
                     wasToggled = false;
                 }
