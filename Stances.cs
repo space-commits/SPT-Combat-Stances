@@ -478,12 +478,13 @@ namespace CombatStances
                 __instance.HandsContainer.WeaponRoot.localPosition = new Vector3(Plugin.PistolTransformNewStartPosition.x, __instance.HandsContainer.TrackingTransform.localPosition.y, __instance.HandsContainer.TrackingTransform.localPosition.z);
             }
 
-            if (!__instance.IsAiming && !StanceController.CancelPistolStance && !StanceController.PistolIsColliding && !Plugin.IsBlindFiring)
+            if (!__instance.IsAiming && !StanceController.CancelPistolStance && !StanceController.PistolIsColliding && !Plugin.IsBlindFiring && !Plugin.IsSprinting)
             {
-
                 StanceController.PistolIsCompressed = true;
                 isResettingPistol = false;
                 hasResetPistolPos = false;
+
+                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
 
                 Plugin.StanceBlender.Speed = Plugin.PistolPosSpeedMulti.Value * stanceMulti;
                 StanceController.StanceTargetPosition = Vector3.Lerp(StanceController.StanceTargetPosition, pistolTargetPosition, Plugin.StanceTransitionSpeed.Value * stanceMulti * dt);
@@ -609,7 +610,7 @@ namespace CombatStances
             }
 
             ////short-stock////
-            if (StanceController.IsShortStock == true && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsLowReady && !__instance.IsAiming && !Plugin.IsSprinting && !StanceController.CancelShortStock && !Plugin.IsBlindFiring)
+            if (StanceController.IsShortStock == true && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsLowReady && !__instance.IsAiming && !Plugin.IsSprinting && !StanceController.CancelShortStock && !Plugin.IsBlindFiring && !Plugin.IsSprinting)
             {
                 __instance.Breath.HipPenalty = Plugin.BaseHipfireAccuracy * 2f;
 
@@ -618,6 +619,8 @@ namespace CombatStances
                 float lowToShort = 1f;
                 isResettingShortStock = false;
                 hasResetShortStock = false;
+
+                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
 
                 if (StanceController.StanceTargetPosition != shortStockTargetPosition)
                 {
@@ -677,13 +680,15 @@ namespace CombatStances
             }
 
             ////high ready////
-            if (StanceController.IsHighReady == true && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !__instance.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelHighReady && !Plugin.IsBlindFiring)
+            if (StanceController.IsHighReady == true && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !__instance.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelHighReady && !Plugin.IsBlindFiring && !Plugin.IsSprinting)
             {
                 float shortToHighMulti = 1.0f;
                 float lowToHighMulti = 1.0f;
                 float activeToHighMulti = 1.0f;
                 isResettingHighReady = false;
                 hasResetHighReady = false;
+
+                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
 
                 if (StanceController.StanceTargetPosition != highReadyTargetPosition)
                 {
@@ -765,6 +770,8 @@ namespace CombatStances
                 isResettingLowReady = false;
                 hasResetLowReady = false;
 
+                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
+
                 if (StanceController.StanceTargetPosition != lowReadyTargetPosition)
                 {
                     if (!hasResetHighReady)
@@ -825,13 +832,15 @@ namespace CombatStances
             }
 
             ////active aiming////
-            if (StanceController.IsActiveAiming == true && !__instance.IsAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !StanceController.IsHighReady && !StanceController.CancelActiveAim && !Plugin.IsBlindFiring)
+            if (StanceController.IsActiveAiming == true && !__instance.IsAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !StanceController.IsHighReady && !StanceController.CancelActiveAim && !Plugin.IsBlindFiring && !Plugin.IsSprinting)
             {
                 float shortToActive = 1f;
                 float highToActive = 1f;
                 float lowToActive = 1f;
                 isResettingActiveAim = false;
                 hasResetActiveAim = false;
+
+                __instance.HandsContainer.HandsRotation.InputIntensity = Plugin.TotalHandsIntensity;
 
                 if (StanceController.StanceTargetPosition != activeAimTargetPosition)
                 {
@@ -1173,7 +1182,7 @@ namespace CombatStances
 
                     if (!StanceController.IsFiringFromStance)
                     {
-                        __instance.HandsContainer.HandsPosition.Damping = Mathf.Clamp(1f * Plugin.AnimationWeightFactor, 0.6f, 0.72f);
+                        __instance.HandsContainer.HandsPosition.Damping = 0.65f;
                     }
 
                     if (isPistol && Plugin.EnableAltPistol.Value)
