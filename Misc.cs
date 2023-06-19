@@ -13,26 +13,6 @@ using static EFT.Player;
 namespace CombatStances
 {
 
-
-    public class UpdateHipInaccuracyPatch : ModulePatch
-    {
-        protected override MethodBase GetTargetMethod()
-        {
-            return typeof(EFT.Player.FirearmController).GetMethod("UpdateHipInaccuracy", BindingFlags.Instance | BindingFlags.Public);
-        }
-
-        [PatchPostfix]
-        private static void PatchPostfix(ref Player.FirearmController __instance)
-        {
-            Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
-            if (player.IsYourPlayer == true)
-            {
-                Plugin.BaseHipfireAccuracy = player.ProceduralWeaponAnimation.Breath.HipPenalty;
-            }
-        }
-    }
-
-
     public class method_20Patch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()
@@ -53,6 +33,8 @@ namespace CombatStances
                     Plugin.HasOptic = __instance.CurrentScope.IsOptic ? true : false;
                     Plugin.AimSpeed = (float)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").GetValue(__instance);
                     Plugin.TotalHandsIntensity = __instance.HandsContainer.HandsRotation.InputIntensity;
+                    Plugin.AnimationWeightFactor = 1f - (firearmController.Item.GetSingleItemTotalWeight() / 12f);
+
                 }
             }
         }
@@ -72,7 +54,7 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(Player.FirearmController), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
-                SkillsClass.GClass1681 skillsClass = (SkillsClass.GClass1681)AccessTools.Field(typeof(EFT.Player.FirearmController), "gclass1681_0").GetValue(__instance);
+                SkillsClass.GClass1680 skillsClass = (SkillsClass.GClass1680)AccessTools.Field(typeof(EFT.Player.FirearmController), "gclass1680_0").GetValue(__instance);
                 Plugin.WeaponSkillErgo = skillsClass.DeltaErgonomics;
                 Plugin.AimSkillADSBuff = skillsClass.AimSpeed;
             }
