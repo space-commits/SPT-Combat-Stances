@@ -33,8 +33,6 @@ namespace CombatStances
                     Plugin.HasOptic = __instance.CurrentScope.IsOptic ? true : false;
                     Plugin.AimSpeed = (float)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").GetValue(__instance);
                     Plugin.TotalHandsIntensity = __instance.HandsContainer.HandsRotation.InputIntensity;
-                    Plugin.AnimationWeightFactor = 1f - (firearmController.Item.GetSingleItemTotalWeight() / 12f);
-
                 }
             }
         }
