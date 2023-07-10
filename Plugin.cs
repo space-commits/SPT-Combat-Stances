@@ -36,6 +36,8 @@ namespace CombatStances
 
         public static float BaseHipfireAccuracy;
 
+        public static float ErgoDelta;
+
         public static float AimSpeed;
         public static float WeaponSkillErgo = 0f;
         public static float AimSkillADSBuff = 0f;
@@ -50,6 +52,8 @@ namespace CombatStances
 
         public static Vector3 TransformBaseStartPosition;
         public static Vector3 WeaponOffsetPosition;
+
+
 
 
         public static Player.BetterValueBlender StanceBlender = new Player.BetterValueBlender
