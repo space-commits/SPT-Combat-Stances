@@ -38,6 +38,10 @@ namespace CombatStances
 
         public static float ErgoDelta;
 
+        public static float HandsIntensity = 1f;
+        public static float BreathIntensity = 1f;
+        public static float RecoilIntensity = 1f;
+
         public static float AimSpeed;
         public static float WeaponSkillErgo = 0f;
         public static float AimSkillADSBuff = 0f;
@@ -358,11 +362,12 @@ namespace CombatStances
             new SetAimingSlowdownPatch().Enable();
             new RegisterShotPatch().Enable();
             new SyncWithCharacterSkillsPatch().Enable();
-            new method_20Patch().Enable();
+            new PwaWeaponParamsPatch().Enable();
             new UpdateHipInaccuracyPatch().Enable();
             new SetAimingPatch().Enable();
             new ToggleAimPatch().Enable();
             new SetFireModePatch().Enable();
+            new OperateStationaryWeaponPatch().Enable();
 
             Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
         }
@@ -384,10 +389,10 @@ namespace CombatStances
                     StanceController.StanceShotTimer();
                 }
 
-                if (Utils.WeaponReady == true)
+                if (Utils.WeaponReady)
                 {
                     GameWorld gameWorld = Singleton<GameWorld>.Instance;
-                    Player player = gameWorld.AllPlayers[0];
+                    Player player = gameWorld.AllAlivePlayersList[0];
                     StanceController.StanceState(player.HandsController.Item as Weapon);
                 }
             }

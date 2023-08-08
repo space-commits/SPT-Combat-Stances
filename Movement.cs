@@ -11,6 +11,8 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using static EFT.Player;
+using MovementContext = GClass1667;
+using ValueHandler = GClass765;
 
 namespace CombatStances
 {
@@ -18,14 +20,14 @@ namespace CombatStances
     {
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(GClass1603).GetMethod("SetAimingSlowdown", BindingFlags.Instance | BindingFlags.Public);
+            return typeof(MovementContext).GetMethod("SetAimingSlowdown", BindingFlags.Instance | BindingFlags.Public);
         }
 
         [PatchPrefix]
-        private static bool Prefix(ref GClass1603 __instance, bool isAiming, float slow)
+        private static bool Prefix(ref MovementContext __instance, bool isAiming, float slow)
         {
 
-            Player player = (Player)AccessTools.Field(typeof(GClass1603), "player_0").GetValue(__instance);
+            Player player = (Player)AccessTools.Field(typeof(MovementContext), "player_0").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
                 if (isAiming)
@@ -48,17 +50,17 @@ namespace CombatStances
     {
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(GClass1603).GetMethod("SprintAcceleration", BindingFlags.Instance | BindingFlags.Public);
+            return typeof(MovementContext).GetMethod("SprintAcceleration", BindingFlags.Instance | BindingFlags.Public);
         }
 
         [PatchPrefix]
-        private static bool Prefix(GClass1603 __instance, float deltaTime)
+        private static bool Prefix(MovementContext __instance, float deltaTime)
         {
-            Player player = (Player)AccessTools.Field(typeof(GClass1603), "player_0").GetValue(__instance);
+            Player player = (Player)AccessTools.Field(typeof(MovementContext), "player_0").GetValue(__instance);
 
             if (player.IsYourPlayer == true)
             {
-                GClass755 rotationFrameSpan = (GClass755)AccessTools.Field(typeof(GClass1603), "gclass755_0").GetValue(__instance);
+                ValueHandler rotationFrameSpan = (ValueHandler)AccessTools.Field(typeof(MovementContext), "gclass765_0").GetValue(__instance);
                 float stanceAccelBonus = StanceController.IsShortStock ? 0.9f : StanceController.IsLowReady ? 1.3f : StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.7f : StanceController.IsHighReady ? 1.3f : 1f;
                 float stanceSpeedBonus = StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.15f : 1f;
 

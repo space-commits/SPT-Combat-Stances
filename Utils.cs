@@ -42,7 +42,7 @@ namespace CombatStances
         public static Player GetPlayer()
         {
             GameWorld gameWorld = Singleton<GameWorld>.Instance;
-            return gameWorld.AllPlayers[0] != null ? gameWorld.AllPlayers[0] : null;
+            return gameWorld.AllAlivePlayersList[0] != null ? gameWorld.AllAlivePlayersList[0] : null;
         }
 
         public static bool CheckIsReady()
@@ -50,9 +50,9 @@ namespace CombatStances
             GameWorld gameWorld = Singleton<GameWorld>.Instance;
             SessionResultPanel sessionResultPanel = Singleton<SessionResultPanel>.Instance;
 
-            if (gameWorld?.AllPlayers.Count > 0)
+            if (gameWorld?.AllAlivePlayersList.Count > 0)
             {
-                Player player = gameWorld.AllPlayers[0];
+                Player player = gameWorld.AllAlivePlayersList[0];
                 if (player != null && player?.HandsController != null)
                 {
                     if (player?.HandsController?.Item != null && player?.HandsController?.Item is Weapon)
@@ -66,7 +66,7 @@ namespace CombatStances
                 }
             }
 
-            if (gameWorld == null || gameWorld.AllPlayers == null || gameWorld.AllPlayers.Count <= 0 || sessionResultPanel != null)
+            if (gameWorld == null || gameWorld.AllAlivePlayersList == null || gameWorld.AllAlivePlayersList.Count <= 0 || sessionResultPanel != null)
             {
                 Utils.IsReady = false;
                 return false;
@@ -80,122 +80,15 @@ namespace CombatStances
             GameWorld gameWorld = Singleton<GameWorld>.Instance;
             SessionResultPanel sessionResultPanel = Singleton<SessionResultPanel>.Instance;
 
-            if (gameWorld?.AllPlayers.Count > 0)
+            if (gameWorld?.AllAlivePlayersList.Count > 0)
             {
-                Player player = gameWorld.AllPlayers[0];
+                Player player = gameWorld.AllAlivePlayersList[0];
                 if (player != null && player is HideoutPlayer)
                 {
                     return true;
                 }
             }
             return false;
-        }
-
-        public static bool IsSight(Mod mod)
-        {
-            if (mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Scope] || mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[AssaultScope] || mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[SpecialScope] || mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[CompactCollimator] || mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Collimator] || mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[IronSight])
-            {
-                return true;
-            }
-            return false;
-        }
-
-        public static bool IsStock(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Stock] ? true : false;
-        }
-        public static bool IsSilencer(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Silencer] ? true: false;
-
-        }
-        public static bool IsMagazine(Mod mod)
-        {
-            return (mod is MagazineClass);
-        }
-        public static bool IsFlashHider(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[FlashHider] ? true : false;
-        }
-        public static bool IsMuzzleCombo(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[MuzzleCombo] ? true : false;
-        }
-        public static bool IsBarrel(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Barrel] ? true : false;
-        }
-        public static bool IsMount(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Mount] ? true : false;
-        }
-        public static bool IsReceiver(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Receiver] ? true : false;
-        }
-        public static bool IsCharge(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Charge] ? true : false;
-        }
-        public static bool IsCompactCollimator(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[CompactCollimator] ? true : false;
-        }
-        public static bool IsCollimator(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Collimator] ? true : false;
-        }
-        public static bool IsAssaultScope(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[AssaultScope] ? true : false;
-        }
-        public static bool IsScope(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Scope] ? true : false;
-        }
-        public static bool IsIronSight(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[IronSight] ? true : false;
-        }
-        public static bool IsSpecialScope(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[SpecialScope] ? true : false;
-        }
-        public static bool IsAuxiliaryMod(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[AuxiliaryMod] ? true : false;
-        }
-        public static bool IsForegrip(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Foregrip] ? true : false;
-        }
-        public static bool IsPistolGrip(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[PistolGrip] ? true : false;
-        }
-        public static bool IsGasblock(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Gasblock] ? true : false;
-        }
-        public static bool IsHandguard(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Handguard] ? true : false;
-        }
-        public static bool IsBipod(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Bipod] ? true : false;
-        }
-        public static bool IsFlashlight(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[Flashlight] ? true : false;
-        }
-        public static bool IsTacticalCombo(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[TacticalCombo] ? true : false;
-        }
-        public static bool IsUBGL(Mod mod)
-        {
-            return mod.GetType() == TemplateIdToObjectMappingsClass.TypeTable[UBGL] ? true : false;
         }
     }
 }
