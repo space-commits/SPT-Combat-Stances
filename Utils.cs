@@ -42,7 +42,7 @@ namespace CombatStances
         public static Player GetPlayer()
         {
             GameWorld gameWorld = Singleton<GameWorld>.Instance;
-            return gameWorld.AllAlivePlayersList[0] != null ? gameWorld.AllAlivePlayersList[0] : null;
+            return gameWorld.MainPlayer != null ? gameWorld.MainPlayer : null;
         }
 
         public static bool CheckIsReady()
@@ -50,23 +50,20 @@ namespace CombatStances
             GameWorld gameWorld = Singleton<GameWorld>.Instance;
             SessionResultPanel sessionResultPanel = Singleton<SessionResultPanel>.Instance;
 
-            if (gameWorld?.AllAlivePlayersList.Count > 0)
+            Player player = gameWorld.MainPlayer;
+            if (player != null && player?.HandsController != null)
             {
-                Player player = gameWorld.AllAlivePlayersList[0];
-                if (player != null && player?.HandsController != null)
+                if (player?.HandsController?.Item != null && player?.HandsController?.Item is Weapon)
                 {
-                    if (player?.HandsController?.Item != null && player?.HandsController?.Item is Weapon)
-                    {
-                        Utils.WeaponReady = true;
-                    }
-                    else
-                    {
-                        Utils.WeaponReady = false;
-                    }
+                    Utils.WeaponReady = true;
+                }
+                else
+                {
+                    Utils.WeaponReady = false;
                 }
             }
 
-            if (gameWorld == null || gameWorld.AllAlivePlayersList == null || gameWorld.AllAlivePlayersList.Count <= 0 || sessionResultPanel != null)
+            if (gameWorld == null || gameWorld.AllAlivePlayersList == null || gameWorld.MainPlayer == null || sessionResultPanel != null)
             {
                 Utils.IsReady = false;
                 return false;
@@ -80,9 +77,9 @@ namespace CombatStances
             GameWorld gameWorld = Singleton<GameWorld>.Instance;
             SessionResultPanel sessionResultPanel = Singleton<SessionResultPanel>.Instance;
 
-            if (gameWorld?.AllAlivePlayersList.Count > 0)
+            if (gameWorld?.MainPlayer != null)
             {
-                Player player = gameWorld.AllAlivePlayersList[0];
+                Player player = gameWorld.MainPlayer;
                 if (player != null && player is HideoutPlayer)
                 {
                     return true;
