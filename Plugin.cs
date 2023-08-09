@@ -355,7 +355,7 @@ namespace CombatStances
             new WeaponOverlappingPatch().Enable();
             new WeaponLengthPatch().Enable();
             new OnWeaponDrawPatch().Enable();
-            new WeaponOverlapViewPatch().Enable();
+ /*           new WeaponOverlapViewPatch().Enable();*/
             new ZeroAdjustmentsPatch().Enable();
             new PlayerLateUpdatePatch().Enable();
             new SprintAccelerationPatch().Enable();

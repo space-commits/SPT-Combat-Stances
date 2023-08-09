@@ -1031,7 +1031,7 @@ namespace CombatStances
             }
         }
     }
-
+/*
     public class WeaponOverlapViewPatch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()
@@ -1045,12 +1045,12 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
             float float_0 = (float)AccessTools.Field(typeof(EFT.Player.FirearmController), "float_0").GetValue(__instance);
 
-    /*        if (float_0 > EFTHardSettings.Instance.STOP_AIMING_AT && __instance.IsAiming)
+            if (float_0 > EFTHardSettings.Instance.STOP_AIMING_AT && __instance.IsAiming)
             {
                 Plugin.IsAiming = true;
-            }*/
+            }
         }
-    }
+    }*/
 
 
     public class WeaponOverlappingPatch : ModulePatch
