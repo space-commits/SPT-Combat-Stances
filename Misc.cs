@@ -79,7 +79,7 @@ namespace CombatStances
             {
                 Plugin.Timer = 0f;
                 StanceController.StanceShotTime = 0f;
-                StanceController.IsFiringFromStance = true;
+                StanceController.IsFiring = true;
                 Plugin.ShotCount++;
             }
         }

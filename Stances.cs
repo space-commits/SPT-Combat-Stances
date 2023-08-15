@@ -39,7 +39,7 @@ namespace CombatStances
         public static bool WasShortStock = false;
         public static bool WasActiveAim = false;
 
-        public static bool IsFiringFromStance = false;
+        public static bool IsFiring = false;
         public static float StanceShotTime = 0.0f;
         public static float ManipTime = 0.0f;
 
@@ -89,7 +89,7 @@ namespace CombatStances
 
                 if (fc.Item.WeapClass != "pistol")
                 {
-                    if (!IsHighReady && !IsLowReady && !Plugin.IsAiming && !IsActiveAiming && !IsShortStock && Plugin.EnableIdleStamDrain.Value && !player.IsInPronePose)
+                    if (Plugin.IsAiming || (Plugin.EnableIdleStamDrain.Value && !IsActiveAiming && !player.IsInPronePose && (!IsHighReady && !IsLowReady && !IsShortStock && !StanceController.IsFiring)))
                     {
                         player.Physical.Aim(!(player.MovementContext.StationaryWeapon == null) ? 0f : fc.ErgonomicWeight * 0.8f * ((1f - Plugin.ADSInjuryMulti) + 1f));
                     }
@@ -97,21 +97,22 @@ namespace CombatStances
                     {
                         player.Physical.Aim(!(player.MovementContext.StationaryWeapon == null) ? 0f : fc.ErgonomicWeight * 0.4f * ((1f - Plugin.ADSInjuryMulti) + 1f));
                     }
-                    else if (!Plugin.IsAiming && !Plugin.EnableIdleStamDrain.Value)
+                    else if (!Plugin.EnableIdleStamDrain.Value)
                     {
                         player.Physical.Aim(0f);
                     }
-                    if (IsHighReady && !IsLowReady && !Plugin.IsAiming && !IsShortStock)
+
+                    if (IsHighReady && !StanceController.IsFiring && !IsLowReady && !Plugin.IsAiming && !IsShortStock)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + ((((1f - (fc.ErgonomicWeight / 100f)) * 0.01f) * Plugin.ADSInjuryMulti)), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    if (IsLowReady && !IsHighReady && !Plugin.IsAiming && !IsShortStock)
+                    if (IsLowReady && !StanceController.IsFiring && !IsHighReady && !Plugin.IsAiming && !IsShortStock)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.03f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    if (IsShortStock && !IsHighReady && !Plugin.IsAiming && !IsLowReady)
+                    if (IsShortStock && !StanceController.IsFiring && !IsHighReady && !Plugin.IsAiming && !IsLowReady)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.01f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
@@ -180,7 +181,7 @@ namespace CombatStances
 
             if (StanceShotTime >= 0.5f)
             {
-                IsFiringFromStance = false;
+                IsFiring = false;
                 StanceShotTime = 0f;
             }
         }
@@ -733,7 +734,7 @@ namespace CombatStances
             }
 
             ////high ready////
-            if (StanceController.IsHighReady == true && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !__instance.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelHighReady && !Plugin.IsBlindFiring)
+            if (StanceController.IsHighReady == true && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !__instance.IsAiming && !StanceController.IsFiring && !StanceController.CancelHighReady && !Plugin.IsBlindFiring)
             {
                 float shortToHighMulti = 1.0f;
                 float lowToHighMulti = 1.0f;
@@ -815,7 +816,7 @@ namespace CombatStances
             }
 
             ////low ready////
-            if (StanceController.IsLowReady == true && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsShortStock && !__instance.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelLowReady && !Plugin.IsBlindFiring)
+            if (StanceController.IsLowReady == true && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsShortStock && !__instance.IsAiming && !StanceController.IsFiring && !StanceController.CancelLowReady && !Plugin.IsBlindFiring)
             {
                 float highToLow = 1.0f;
                 float shortToLow = 1.0f;
@@ -1248,7 +1249,7 @@ namespace CombatStances
                         bool allStancesReset = hasResetActiveAim && hasResetLowReady && hasResetHighReady && hasResetShortStock && hasResetPistolPos;
                         bool isInStance = StanceController.IsHighReady || StanceController.IsLowReady || StanceController.IsShortStock || StanceController.IsActiveAiming;
                         bool isInShootableStance = StanceController.IsShortStock || StanceController.IsActiveAiming || isPistol;
-                        bool cancelBecauseSooting = StanceController.IsFiringFromStance && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
+                        bool cancelBecauseSooting = StanceController.IsFiring && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
                         bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseSooting;
                         bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
@@ -1256,11 +1257,6 @@ namespace CombatStances
 
                         Quaternion rhs = Quaternion.Euler(float_14 * Single_3 * vector3_6);
                         __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(vector3_4, quaternion_6 * rhs * currentRotation);
-
-                        if (!StanceController.IsFiringFromStance)
-                        {
-                            __instance.HandsContainer.HandsPosition.Damping = 0.5f;
-                        }
 
                         if (isPistol && Plugin.EnableAltPistol.Value)
                         {
@@ -1537,7 +1533,7 @@ namespace CombatStances
                     bool allStancesReset = hasResetActiveAim && hasResetLowReady && hasResetHighReady && hasResetShortStock && hasResetPistolPos;
                     bool isInStance = StanceController.IsHighReady || StanceController.IsLowReady || StanceController.IsShortStock || StanceController.IsActiveAiming;
                     bool isInShootableStance = StanceController.IsShortStock || StanceController.IsActiveAiming || isPistol;
-                    bool cancelBecauseSooting = StanceController.IsFiringFromStance && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
+                    bool cancelBecauseSooting = StanceController.IsFiring && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
                     bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseSooting;
                     bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
@@ -1545,11 +1541,6 @@ namespace CombatStances
 
                     Quaternion rhs = Quaternion.Euler(float_14 * Single_3 * vector3_6);
                     __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(vector3_4, quaternion_6 * rhs * currentRotation);
-
-                    if (! StanceController.IsFiringFromStance)
-                    {
-                        __instance.HandsContainer.HandsPosition.Damping = 0.5f;
-                    }
 
                     if (isPistol && Plugin.EnableAltPistol.Value)
                     {
