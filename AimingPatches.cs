@@ -115,6 +115,7 @@ namespace CombatStances
 
                 if (isAiming)
                 {
+                    StanceController.IsPatrolStance = false;
                     player.MovementContext.SetAimingSlowdown(true, 0.33f);
                 }
 
@@ -128,7 +129,7 @@ namespace CombatStances
                     if (Plugin.ToggleActiveAim.Value)
                     {
                         StanceController.IsActiveAiming = false;
-                        Plugin.StanceBlender.Target = 0f;
+                        StanceController.StanceBlender.Target = 0f;
                     }
                     wasToggled = false;
                 }

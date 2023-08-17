@@ -9,64 +9,16 @@ using EFT.Animations;
 using EFT.InventoryLogic;
 using static MineDirectional;
 using BepInEx.Bootstrap;
-
+using System;
+using System.Threading.Tasks;
+using System.IO;
+using UnityEngine.Networking;
 
 namespace CombatStances
 {
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     public class Plugin : BaseUnityPlugin
     {
-
-        public static bool IsAiming;
-        public static bool IsBlindFiring;
-        public static bool HasOptic;
-        public static bool IsAllowedADS;
-        public static bool RightArmBlacked;
-        public static bool LeftArmBlacked;
-
-        public static bool IsSprinting;
-        public static bool DidWeaponSwap;
-        public static bool IsInInventory = false;
-
-        public static float BaseWeaponLength;
-        public static float NewWeaponLength;
-
-        public static float RemainingArmStamPercentage = 1f;
-        public static float ADSInjuryMulti;
-
-        public static float BaseHipfireAccuracy;
-
-        public static float ErgoDelta;
-
-        public static float HandsIntensity = 1f;
-        public static float BreathIntensity = 1f;
-        public static float RecoilIntensity = 1f;
-
-        public static float AimSpeed;
-        public static float WeaponSkillErgo = 0f;
-        public static float AimSkillADSBuff = 0f;
-        public static float AimMoveSpeedInjuryReduction;
-        public static float TotalHandsIntensity = 1f;
-
-        public static float Timer = 0.0f;
-        public static int ShotCount = 0;
-        public static int PrevShotCount = ShotCount;
-
-        public static bool IsInThirdPerson = false;
-
-        public static Vector3 TransformBaseStartPosition;
-        public static Vector3 WeaponOffsetPosition;
-
-
-
-
-        public static Player.BetterValueBlender StanceBlender = new Player.BetterValueBlender
-        {
-            Speed = 5f,
-            Target = 0f
-        };
-
-
         public static ConfigEntry<bool> EnableFSPatch { get; set; }
         public static ConfigEntry<bool> EnableNVGPatch { get; set; }
 
@@ -75,6 +27,9 @@ namespace CombatStances
         public static ConfigEntry<KeyboardShortcut> HighReadyKeybind { get; set; }
         public static ConfigEntry<KeyboardShortcut> ShortStockKeybind { get; set; }
         public static ConfigEntry<KeyboardShortcut> CycleStancesKeybind { get; set; }
+        public static ConfigEntry<KeyboardShortcut> MountKeybind { get; set; }
+        public static ConfigEntry<KeyboardShortcut> PatrolKeybind { get; set; }
+
 
         public static ConfigEntry<bool> ToggleActiveAim { get; set; }
         public static ConfigEntry<bool> StanceToggleDevice { get; set; }
@@ -83,14 +38,18 @@ namespace CombatStances
         public static ConfigEntry<bool> EnableIdleStamDrain { get; set; }
         public static ConfigEntry<bool> EnableStanceStamChanges { get; set; }
         public static ConfigEntry<bool> EnableTacSprint { get; set; }
+        public static ConfigEntry<bool> EnableMountUI { get; set; }
 
         public static ConfigEntry<float> WeapOffsetX { get; set; }
         public static ConfigEntry<float> WeapOffsetY { get; set; }
         public static ConfigEntry<float> WeapOffsetZ { get; set; }
 
-        public static ConfigEntry<float> StanceTransitionSpeed { get; set; }
+        public static ConfigEntry<float> StanceTransitionSpeedMulti { get; set; }
+        public static ConfigEntry<float> StanceRotationSpeedMulti { get; set; }
         public static ConfigEntry<float> ThirdPersonPositionSpeed { get; set; }
         public static ConfigEntry<float> ThirdPersonRotationSpeed { get; set; }
+        public static ConfigEntry<float> ThirdPersonRotationMulti { get; set; }
+
 
         public static ConfigEntry<float> ActiveAimRotationX { get; set; }
         public static ConfigEntry<float> ActiveAimRotationY { get; set; }
@@ -204,7 +163,158 @@ namespace CombatStances
         public static ConfigEntry<float> ShortStockReadyRotationY { get; set; }
         public static ConfigEntry<float> ShortStockReadyRotationZ { get; set; }
 
+        public static bool IsAiming;
+        public static bool IsBlindFiring;
+        public static bool HasOptic;
+        public static bool IsAllowedADS;
+        public static bool RightArmBlacked;
+        public static bool LeftArmBlacked;
+
+        public static bool IsSprinting;
+        public static bool DidWeaponSwap;
+        public static bool IsInInventory = false;
+
+        public static float BaseWeaponLength;
+        public static float NewWeaponLength;
+
+        public static float RemainingArmStamPercentage = 1f;
+        public static float ADSInjuryMulti;
+
+        public static float BaseHipfireInaccuracy;
+
+        public static float ErgoDelta;
+
+        public static float BreathIntensity = 1f;
+        public static float HandsIntensity = 1f;
+        public static float RecoilIntensity = 1f;
+        public static float HandsDamping = 0.5f;
+        public static float Convergence = 5f;
+
+        public static float AimSpeed;
+        public static float WeaponSkillErgo = 0f;
+        public static float AimSkillADSBuff = 0f;
+        public static float AimMoveSpeedInjuryReduction;
+
+        public static float Timer = 0.0f;
+        public static int ShotCount = 0;
+        public static int PrevShotCount = ShotCount;
+
+        public static bool IsInThirdPerson = false;
+
+        public static Vector3 TransformBaseStartPosition;
+        public static Vector3 WeaponOffsetPosition;
+
+        public static GameObject Hook;
+        public static MountingUI MountingUIComponent;
+        public static Dictionary<string, Sprite> LoadedSprites = new Dictionary<string, Sprite>();
+
+        private void loadSprites()
+        {
+            string[] iconFilesDir = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory + "\\BepInEx\\plugins\\Realism\\icons\\", "*.png");
+
+            foreach (string fileDir in iconFilesDir)
+            {
+                loadSprite(fileDir);
+            }
+        }
+
+        private async void loadSprite(string path)
+        {
+            LoadedSprites[Path.GetFileName(path)] = await requestSprite(path);
+        }
+
+        private async Task<Sprite> requestSprite(string path)
+        {
+            UnityWebRequest www = UnityWebRequestTexture.GetTexture(path);
+            var SendWeb = www.SendWebRequest();
+
+            while (!SendWeb.isDone)
+                await Task.Yield();
+
+            if (www.isNetworkError || www.isHttpError)
+            {
+                return null;
+            }
+            else
+            {
+                Texture2D texture = ((DownloadHandlerTexture)www.downloadHandler).texture;
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                return sprite;
+            }
+        }
+
         private void Awake()
+        {
+            try
+            {
+                loadSprites();
+            }
+            catch (Exception exception)
+            {
+                Logger.LogError(exception);
+            }
+
+            Hook = new GameObject();
+            MountingUIComponent = Hook.AddComponent<MountingUI>();
+            DontDestroyOnLoad(Hook);
+
+            intiConfigs();
+
+            new ApplyComplexRotationPatch().Enable();
+            new ApplySimpleRotationPatch().Enable();
+            new InitTransformsPatch().Enable();
+            new WeaponOverlappingPatch().Enable();
+            new WeaponLengthPatch().Enable();
+            new OnWeaponDrawPatch().Enable();
+            new WeaponOverlapViewPatch().Enable();
+            new ZeroAdjustmentsPatch().Enable();
+            new PlayerLateUpdatePatch().Enable();
+            new SprintAccelerationPatch().Enable();
+            new SetAimingSlowdownPatch().Enable();
+            new RegisterShotPatch().Enable();
+            new SyncWithCharacterSkillsPatch().Enable();
+            new PwaWeaponParamsPatch().Enable();
+            new UpdateHipInaccuracyPatch().Enable();
+            new SetAimingPatch().Enable();
+            new ToggleAimPatch().Enable();
+            new SetFireModePatch().Enable();
+            new OperateStationaryWeaponPatch().Enable();
+            new CollisionPatch().Enable();
+            new RotatePatch().Enable();
+            new SetTiltPatch().Enable();
+            new ClampSpeedPatch().Enable();
+            new UpdateWeaponVariablesPatch().Enable();
+
+            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
+        }
+
+        void Update()
+        {
+            if (Utils.CheckIsReady())
+            {
+
+                if (Plugin.ShotCount > Plugin.PrevShotCount)
+                {
+                    StanceController.IsFiring = true;
+                    Plugin.PrevShotCount = Plugin.ShotCount;
+                }
+
+                if (Plugin.ShotCount == Plugin.PrevShotCount)
+                {
+                    Plugin.Timer += Time.deltaTime;
+                    StanceController.StanceShotTimer();
+                }
+
+                if (Utils.WeaponReady)
+                {
+                    GameWorld gameWorld = Singleton<GameWorld>.Instance;
+                    Player player = gameWorld.AllAlivePlayersList[0];
+                    StanceController.StanceState(player.HandsController.Item as Weapon);
+                }
+            }
+        }
+
+        private void intiConfigs() 
         {
             string miscSettings = "1. Misc. Settings";
             string weapAimAndPos = "2. Weapon Stances And Position";
@@ -223,20 +333,25 @@ namespace CombatStances
             EnableStanceStamChanges = Config.Bind<bool>(weapAimAndPos, "Enable Stance Stamina And Movement Effects", true, new ConfigDescription("Enabled Stances To Affect Stamina And Movement Speed. High + Low Ready, Short-Stocking And Pistol Idle Will Regenerate Stamina Faster And Optionally Idle With Rifles Drains Stamina. High Ready Has Faster Sprint Speed And Sprint Accel, Low Ready Has Faster Sprint Accel. Arm Stamina Won't Drain Regular Stamina If It Reaches 0.", null, new ConfigurationManagerAttributes { Order = 183 }));
             ToggleActiveAim = Config.Bind<bool>(weapAimAndPos, "Use Toggle For Active Aim", false, new ConfigDescription("", null, new ConfigurationManagerAttributes { Order = 181 }));
             StanceToggleDevice = Config.Bind<bool>(weapAimAndPos, "Stance Toggles Off Light/Laser", true, new ConfigDescription("Entering High/Low Ready Will Toggle Off Lights/Lasers.", null, new ConfigurationManagerAttributes { Order = 180 }));
+            EnableMountUI = Config.Bind<bool>(weapAimAndPos, "Enable Mounting UI", true, new ConfigDescription("If Enabled, An Icon On Screen Will Indicate If Player Is Bracing, Mounting And What Side Of Cover They Are On.", null, new ConfigurationManagerAttributes { Order = 179 }));
 
             CycleStancesKeybind = Config.Bind(weapAimAndPos, "Cycle Stances Keybind", new KeyboardShortcut(KeyCode.J), new ConfigDescription("Cycles Between High, Low Ready and Short-Stocking. Double Click Returns To Idle.", null, new ConfigurationManagerAttributes { Order = 174 }));
             ActiveAimKeybind = Config.Bind(weapAimAndPos, "Active Aim Keybind", new KeyboardShortcut(KeyCode.LeftArrow), new ConfigDescription("", null, new ConfigurationManagerAttributes { Order = 173 }));
             HighReadyKeybind = Config.Bind(weapAimAndPos, "High Ready Keybind", new KeyboardShortcut(KeyCode.UpArrow), new ConfigDescription("", null, new ConfigurationManagerAttributes { Order = 172 }));
             LowReadyKeybind = Config.Bind(weapAimAndPos, "Low Ready Keybind", new KeyboardShortcut(KeyCode.DownArrow), new ConfigDescription("", null, new ConfigurationManagerAttributes { Order = 171 }));
             ShortStockKeybind = Config.Bind(weapAimAndPos, "Short-Stock Keybind", new KeyboardShortcut(KeyCode.RightArrow), new ConfigDescription("", null, new ConfigurationManagerAttributes { Order = 170 }));
+            MountKeybind = Config.Bind(weapAimAndPos, "Mounting Keybind", new KeyboardShortcut(KeyCode.KeypadMultiply), new ConfigDescription("Snaps To Cover To Improve Weapon Stability And Recoil, Toggle Only.", null, new ConfigurationManagerAttributes { Order = 160 }));
+            PatrolKeybind = Config.Bind(weapAimAndPos, "Patrol/Neutral Stance Keybind", new KeyboardShortcut(KeyCode.KeypadEnter), new ConfigDescription("Puts The Weapon In A Neutral Position, Improving Arm Stam Regen And Walk Speed. For Maximum Larping.", null, new ConfigurationManagerAttributes { Order = 155 }));
 
             WeapOffsetX = Config.Bind<float>(weapAimAndPos, "Weapon Position X-Axis", 0.0f, new ConfigDescription("Adjusts The Starting Position Of Weapon On Screen.", new AcceptableValueRange<float>(-0.1f, 0.1f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 152 }));
             WeapOffsetY = Config.Bind<float>(weapAimAndPos, "Weapon Position Y-Axis", 0.0f, new ConfigDescription("Adjusts The Starting Position Of Weapon On Screen.", new AcceptableValueRange<float>(-0.1f, 0.1f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 151 }));
             WeapOffsetZ = Config.Bind<float>(weapAimAndPos, "Weapon Position Z-Axis", 0.0f, new ConfigDescription("Adjusts The Starting Position Of Weapon On Screen.", new AcceptableValueRange<float>(-0.1f, 0.1f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 150 }));
 
-            StanceTransitionSpeed = Config.Bind<float>(weapAimAndPos, "Stance Transition Speed.", 5.0f, new ConfigDescription("Adjusts The Position Change Speed Between Stances.", new AcceptableValueRange<float>(1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 145, IsAdvanced = true }));
-            ThirdPersonRotationSpeed = Config.Bind<float>(weapAimAndPos, "Third Person Postion Speed Multi", 1.5f, new ConfigDescription("", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 144, IsAdvanced = true }));
-            ThirdPersonPositionSpeed = Config.Bind<float>(weapAimAndPos, "Third Person Transition Speed Multi", 2.0f, new ConfigDescription("", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 143, IsAdvanced = true }));
+            StanceTransitionSpeedMulti = Config.Bind<float>(weapAimAndPos, "Stance Transition Speed.", 15.0f, new ConfigDescription("Adjusts The Position Change Speed Between Stances.", new AcceptableValueRange<float>(1f, 30f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 145, IsAdvanced = true }));
+            StanceRotationSpeedMulti = Config.Bind<float>(weapAimAndPos, "Stance Rotation Speed Multi", 1f, new ConfigDescription("Adjusts The Speed Of Stance Rotation Changes.", new AcceptableValueRange<float>(1f, 10f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 146, IsAdvanced = true }));
+            ThirdPersonRotationSpeed = Config.Bind<float>(weapAimAndPos, "Third Person Rotation Speed Multi", 1.0f, new ConfigDescription("Speed Of Stance Position Change In Third Person.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 144, IsAdvanced = true }));
+            ThirdPersonPositionSpeed = Config.Bind<float>(weapAimAndPos, "Third Person Position Speed Multi", 1.0f, new ConfigDescription("Speed Of Stance Rotation Change In Third Person.", new AcceptableValueRange<float>(0.1f, 20f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 143, IsAdvanced = true }));
+            ThirdPersonRotationMulti = Config.Bind<float>(weapAimAndPos, "Third Person Rotation Multi", 2.0f, new ConfigDescription("Increases The Rotation Of High Ready And Low Ready Stances.", new AcceptableValueRange<float>(1f, 3f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 140, IsAdvanced = true }));
 
             ActiveAimAdditionalRotationSpeedMulti = Config.Bind<float>(activeAim, "Active Aim Additonal Rotation Speed Multi", 1.0f, new ConfigDescription("", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 145, IsAdvanced = true }));
             ActiveAimResetRotationSpeedMulti = Config.Bind<float>(activeAim, "Active Aim Reset Rotation Speed Multi", 3.0f, new ConfigDescription("", new AcceptableValueRange<float>(0.0f, 5f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 145, IsAdvanced = true }));
@@ -347,55 +462,6 @@ namespace CombatStances
             ShortStockResetRotationX = Config.Bind<float>(shortStock, "Short-Stock Ready Reset Rotation X-Axis", -5.0f, new ConfigDescription("Weapon Rotation When Going Out Of Stance.", new AcceptableValueRange<float>(-1000f, 1000f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 3, IsAdvanced = true }));
             ShortStockResetRotationY = Config.Bind<float>(shortStock, "Short-Stock Ready Reset Rotation Y-Axis", 12.0f, new ConfigDescription("Weapon Rotation When Going Out Of Stance.", new AcceptableValueRange<float>(-1000f, 1000f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 2, IsAdvanced = true }));
             ShortStockResetRotationZ = Config.Bind<float>(shortStock, "Short-Stock Ready Reset Rotation Z-Axis", 1.0f, new ConfigDescription("Weapon Rotation When Going Out Of Stance.", new AcceptableValueRange<float>(-1000f, 1000f), new ConfigurationManagerAttributes { ShowRangeAsPercent = false, Order = 1, IsAdvanced = true }));
-
-
-            new ApplyComplexRotationPatch().Enable();
-            new ApplySimpleRotationPatch().Enable();
-            new InitTransformsPatch().Enable();
-            new WeaponOverlappingPatch().Enable();
-            new WeaponLengthPatch().Enable();
-            new OnWeaponDrawPatch().Enable();
- /*           new WeaponOverlapViewPatch().Enable();*/
-            new ZeroAdjustmentsPatch().Enable();
-            new PlayerLateUpdatePatch().Enable();
-            new SprintAccelerationPatch().Enable();
-            new SetAimingSlowdownPatch().Enable();
-            new RegisterShotPatch().Enable();
-            new SyncWithCharacterSkillsPatch().Enable();
-            new PwaWeaponParamsPatch().Enable();
-            new UpdateHipInaccuracyPatch().Enable();
-            new SetAimingPatch().Enable();
-            new ToggleAimPatch().Enable();
-            new SetFireModePatch().Enable();
-            new OperateStationaryWeaponPatch().Enable();
-
-            Logger.LogInfo($"Plugin {PluginInfo.PLUGIN_GUID} is loaded!");
-        }
-
-        void Update()
-        {
-            if (Utils.CheckIsReady())
-            {
-
-                if (Plugin.ShotCount > Plugin.PrevShotCount)
-                {
-                    StanceController.IsFiring = true;
-                    Plugin.PrevShotCount = Plugin.ShotCount;
-                }
-
-                if (Plugin.ShotCount == Plugin.PrevShotCount)
-                {
-                    Plugin.Timer += Time.deltaTime;
-                    StanceController.StanceShotTimer();
-                }
-
-                if (Utils.WeaponReady)
-                {
-                    GameWorld gameWorld = Singleton<GameWorld>.Instance;
-                    Player player = gameWorld.AllAlivePlayersList[0];
-                    StanceController.StanceState(player.HandsController.Item as Weapon);
-                }
-            }
         }
     }
 }

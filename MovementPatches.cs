@@ -16,6 +16,32 @@ using ValueHandler = GClass765;
 
 namespace CombatStances
 {
+
+    public class ClampSpeedPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return typeof(MovementContext).GetMethod("ClampSpeed", BindingFlags.Instance | BindingFlags.Public);
+        }
+
+        [PatchPrefix]
+        private static bool Prefix(MovementContext __instance, float speed, ref float __result)
+        {
+
+            Player player = (Player)AccessTools.Field(typeof(MovementContext), "player_0").GetValue(__instance);
+            if (player.IsYourPlayer == true)
+            {
+                float stanceFactor = StanceController.IsPatrolStance ? 1.25f : StanceController.IsHighReady ? 0.9f : 1f;
+
+                __result = Mathf.Clamp(speed, 0f, __instance.StateSpeedLimit * stanceFactor);
+                return false;
+            }
+            return true;
+
+        }
+    }
+
+
     public class SetAimingSlowdownPatch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()
@@ -62,7 +88,7 @@ namespace CombatStances
             {
                 ValueHandler rotationFrameSpan = (ValueHandler)AccessTools.Field(typeof(MovementContext), "gclass765_0").GetValue(__instance);
                 float stanceAccelBonus = StanceController.IsShortStock ? 0.9f : StanceController.IsLowReady ? 1.3f : StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.7f : StanceController.IsHighReady ? 1.3f : 1f;
-                float stanceSpeedBonus = StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.15f : 1f;
+                float stanceSpeedBonus = StanceController.IsPatrolStance ? 1.5f : StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.15f : 1f;
 
                 float sprintAccel = player.Physical.SprintAcceleration * deltaTime * stanceAccelBonus;
                 float speed = (player.Physical.SprintSpeed * __instance.SprintingSpeed + 1f) * __instance.StateSprintSpeedLimit * stanceSpeedBonus;
@@ -82,37 +108,6 @@ namespace CombatStances
         {
             return typeof(Player).GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic);
         }
-
-        [PatchPostfix]
-        private static void PatchPostfix(Player __instance)
-        {
-            if (Utils.CheckIsReady() == true && __instance.IsYourPlayer == true)
-            {
-                Player.FirearmController fc = __instance.HandsController as Player.FirearmController;
-                PlayerInjuryStateCheck(__instance);
-                Plugin.IsSprinting = __instance.IsSprintEnabled;
-                Plugin.IsInInventory = __instance.IsInventoryOpened;
-
-                if (fc != null)
-                {
-                    AimController.ADSCheck(__instance, fc);
-
-                    if (Plugin.EnableStanceStamChanges.Value == true)
-                    {
-                        StanceController.SetStanceStamina(__instance, fc);
-                    }
-
-                    Plugin.RemainingArmStamPercentage = Mathf.Min(__instance.Physical.HandsStamina.Current * 1.65f, __instance.Physical.HandsStamina.TotalCapacity) / __instance.Physical.HandsStamina.TotalCapacity;
-                }
-                else if (Plugin.EnableStanceStamChanges.Value == true)
-                {
-                    StanceController.ResetStanceStamina(__instance);
-                }
-
-                __instance.Physical.HandsStamina.Current = Mathf.Max(__instance.Physical.HandsStamina.Current, 1f);
-            }
-        }
-
 
         public static void PlayerInjuryStateCheck(Player player)
         {
@@ -147,6 +142,67 @@ namespace CombatStances
             {
                 Plugin.AimMoveSpeedInjuryReduction = 0.1f;
                 Plugin.ADSInjuryMulti = 0.5f;
+            }
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(Player __instance)
+        {
+            if (Utils.CheckIsReady() == true && __instance.IsYourPlayer == true)
+            {
+                Player.FirearmController fc = __instance.HandsController as Player.FirearmController;
+                PlayerInjuryStateCheck(__instance);
+                Plugin.IsSprinting = __instance.IsSprintEnabled;
+                Plugin.IsInInventory = __instance.IsInventoryOpened;
+
+                if (fc != null)
+                {
+                    AimController.ADSCheck(__instance, fc);
+
+                    if (Plugin.EnableStanceStamChanges.Value == true)
+                    {
+                        StanceController.SetStanceStamina(__instance, fc);
+                    }
+
+                    Plugin.RemainingArmStamPercentage = Mathf.Min(__instance.Physical.HandsStamina.Current * 1.65f, __instance.Physical.HandsStamina.TotalCapacity) / __instance.Physical.HandsStamina.TotalCapacity;
+                }
+                else if (Plugin.EnableStanceStamChanges.Value == true)
+                {
+                    StanceController.ResetStanceStamina(__instance);
+                }
+
+                __instance.Physical.HandsStamina.Current = Mathf.Max(__instance.Physical.HandsStamina.Current, 1f);
+
+                float mountingSwayBonus = StanceController.IsMounting ? StanceController.MountingSwayBonus : StanceController.BracingSwayBonus;
+                float mountingRecoilBonus = StanceController.IsMounting ? StanceController.MountingRecoilBonus : StanceController.BracingRecoilBonus;
+
+                __instance.ProceduralWeaponAnimation.Breath.Intensity = Plugin.BreathIntensity * mountingSwayBonus; //default if no recoil standalone, otherwise 
+                __instance.ProceduralWeaponAnimation.HandsContainer.HandsRotation.InputIntensity = Plugin.HandsIntensity * mountingSwayBonus; //default if no recoil standalone, otherwise 
+                __instance.ProceduralWeaponAnimation.Shootingg.Intensity = Plugin.RecoilIntensity * mountingRecoilBonus;    
+
+                if (StanceController.IsFiring)
+                {
+                    StanceController.IsPatrolStance = false;
+                    __instance.HandsController.FirearmsAnimator.SetPatrol(false);
+                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping; //default if no recoil standalone, otherwise its value
+                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = Plugin.Convergence; //default if no recoil standalone, otherwise its value
+                }
+                else
+                {
+                    __instance.HandsController.FirearmsAnimator.SetPatrol(StanceController.IsPatrolStance);
+
+                    if (StanceController.CanResetDamping)
+                    {
+                        __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Mathf.Lerp(__instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping, 0.45f, 0.04f); //default if no recoil standalone, otherwise its value
+                    }
+                    else
+                    {
+                        __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = 0.75f;
+                        __instance.ProceduralWeaponAnimation.Shootingg.ShotVals[3].Intensity = 0;
+                        __instance.ProceduralWeaponAnimation.Shootingg.ShotVals[4].Intensity = 0;
+                    }
+                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = 10f * StanceController.WiggleReturnSpeed;
+                }
             }
         }
     }

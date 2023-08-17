@@ -15,6 +15,8 @@ using WeaponSkills = SkillsClass.GClass1743;
 namespace CombatStances
 {
 
+
+
     public class PwaWeaponParamsPatch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()
@@ -35,8 +37,35 @@ namespace CombatStances
                 {
                     Plugin.HasOptic = __instance.CurrentScope.IsOptic ? true : false;
                     Plugin.AimSpeed = (float)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").GetValue(__instance);
-                    Plugin.TotalHandsIntensity = __instance.HandsContainer.HandsRotation.InputIntensity;
                     Plugin.ErgoDelta = weapon.ErgonomicsDelta;
+                }
+            }
+        }
+    }
+
+    public class UpdateWeaponVariablesPatch : ModulePatch
+    {
+        protected override MethodBase GetTargetMethod()
+        {
+            return typeof(EFT.Animations.ProceduralWeaponAnimation).GetMethod("UpdateWeaponVariables", BindingFlags.Instance | BindingFlags.NonPublic);
+        }
+
+        [PatchPostfix]
+        private static void PatchPostfix(ref EFT.Animations.ProceduralWeaponAnimation __instance)
+        {
+            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "ginterface114_0").GetValue(__instance);
+
+            if (playerInterface != null && playerInterface.Weapon != null)
+            {
+                Weapon weapon = playerInterface.Weapon;
+                Player player = Singleton<GameWorld>.Instance.GetAlivePlayerByProfileID(weapon.Owner.ID);
+                if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer)
+                {
+                    Plugin.HandsIntensity = __instance.HandsContainer.HandsRotation.InputIntensity;
+                    Plugin.BreathIntensity = __instance.Breath.Intensity;
+                    Plugin.RecoilIntensity = __instance.Shootingg.Intensity;
+                    Plugin.HandsDamping = __instance.HandsContainer.HandsPosition.Damping;
+                    Plugin.Convergence = __instance.HandsContainer.Recoil.ReturnSpeed;
                 }
             }
         }
