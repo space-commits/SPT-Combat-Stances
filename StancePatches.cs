@@ -554,7 +554,7 @@ namespace CombatStances
                         bool allStancesReset = hasResetActiveAim && hasResetLowReady && hasResetHighReady && hasResetShortStock && hasResetPistolPos;
                         bool isInStance = StanceController.IsHighReady || StanceController.IsLowReady || StanceController.IsShortStock || StanceController.IsActiveAiming;
                         bool isInShootableStance = StanceController.IsShortStock || StanceController.IsActiveAiming || isPistol;
-                        bool cancelBecauseSooting = StanceController.IsFiring && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
+                        bool cancelBecauseSooting = StanceController.IsFiringFromStance && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
                         bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseSooting;
                         bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
@@ -566,7 +566,7 @@ namespace CombatStances
                         Quaternion rhs = Quaternion.Euler(pitch * overlappingBlindfire * blindfireRotation);
                         __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(weaponPosition, weapRotation * rhs * currentRotation);
 
-                        if (isPistol && Plugin.EnableAltPistol.Value)
+                        if (isPistol && Plugin.EnableAltPistol.Value && !StanceController.IsPatrolStance)
                         {
                             if (StanceController.PistolIsCompressed && !Plugin.IsAiming && !isResettingPistol && !Plugin.IsBlindFiring)
                             {
@@ -588,7 +588,7 @@ namespace CombatStances
                             hasResetShortStock = true;
                             StanceController.DoPistolStances(true, ref __instance, ref stanceRotation, dt, ref hasResetPistolPos, player, Logger, ref stanceSpeed, ref isResettingPistol, Plugin.ErgoDelta);
                         }
-                        else
+                        else if(!isPistol)
                         {
                             if ((!isInStance && allStancesReset) || (cancelBecauseSooting && !isInShootableStance) || Plugin.IsAiming || cancelStance || Plugin.IsBlindFiring)
                             {
@@ -660,7 +660,6 @@ namespace CombatStances
                         float stanceSpeed = 1f;
 
                         ////peaceful positon//// (player.AIData.BotOwner.Memory.IsPeace == true && !StanceController.botsToUseTacticalStances.Contains(player.AIData.BotOwner.Profile.Info.Settings.Role.ToString()) && !player.IsSprintEnabled && !__instance.IsAiming && !player.AIData.BotOwner.ShootData.Shooting && (Time.time - player.AIData.BotOwner.ShootData.LastTriggerPressd) > 20f)
-
                         if (player.AIData.BotOwner.GetPlayer.MovementContext.BlindFire == 0)
                         {
                             if (isPeace && !player.IsSprintEnabled && player.MovementContext.StationaryWeapon == null && !__instance.IsAiming && !firearmController.IsInReloadOperation() && !firearmController.IsInventoryOpen() && !firearmController.IsInInteractionStrictCheck() && !firearmController.IsInSpawnOperation() && !firearmController.IsHandsProcessing()) // && player.AIData.BotOwner.WeaponManager.IsWeaponReady &&  player.AIData.BotOwner.WeaponManager.InIdleState()
@@ -849,7 +848,7 @@ namespace CombatStances
                     bool allStancesReset = hasResetActiveAim && hasResetLowReady && hasResetHighReady && hasResetShortStock && hasResetPistolPos;
                     bool isInStance = StanceController.IsHighReady || StanceController.IsLowReady || StanceController.IsShortStock || StanceController.IsActiveAiming;
                     bool isInShootableStance = StanceController.IsShortStock || StanceController.IsActiveAiming || isPistol;
-                    bool cancelBecauseSooting = StanceController.IsFiring && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
+                    bool cancelBecauseSooting = StanceController.IsFiringFromStance && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
                     bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseSooting;
                     bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
@@ -880,7 +879,7 @@ namespace CombatStances
                         hasResetShortStock = true;
                         StanceController.DoPistolStances(false, ref __instance, ref stanceRotation, dt, ref hasResetPistolPos, player, Logger, ref stanceRotationSpeed, ref isResettingPistol, Plugin.ErgoDelta);
                     }
-                    else if (isPistol)
+                    else if (!isPistol)
                     {
                         if ((!isInStance && allStancesReset) || (cancelBecauseSooting && !isInShootableStance) || Plugin.IsAiming || cancelStance || Plugin.IsBlindFiring)
                         {

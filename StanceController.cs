@@ -38,7 +38,7 @@ namespace CombatStances
         public static bool WasShortStock = false;
         public static bool WasActiveAim = false;
 
-        public static bool IsFiring = false;
+        public static bool IsFiringFromStance = false;
         public static float StanceShotTime = 0.0f;
         public static float ManipTime = 0.0f;
         public static float DampingTimer = 0.0f;
@@ -116,11 +116,11 @@ namespace CombatStances
                     {
                         player.Physical.Aim(0f);
                     }
-                    else if (Plugin.IsAiming || (Plugin.EnableIdleStamDrain.Value && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose && (!IsHighReady && !IsLowReady && !IsShortStock && !IsFiring)))
+                    else if (Plugin.IsAiming || (Plugin.EnableIdleStamDrain.Value && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose && (!IsHighReady && !IsLowReady && !IsShortStock && !IsFiringFromStance)))
                     {
                         player.Physical.Aim(!(player.MovementContext.StationaryWeapon == null) ? 0f : fc.ErgonomicWeight * 0.8f * ((1f - Plugin.ADSInjuryMulti) + 1f));
                     }
-                    else if (IsActiveAiming)
+                    else if (IsActiveAiming && Plugin.EnableIdleStamDrain.Value)
                     {
                         player.Physical.Aim(!(player.MovementContext.StationaryWeapon == null) ? 0f : fc.ErgonomicWeight * 0.4f * ((1f - Plugin.ADSInjuryMulti) + 1f));
                     }
@@ -134,17 +134,17 @@ namespace CombatStances
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.04f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    else if (IsHighReady && !IsFiring && !Plugin.IsAiming)
+                    else if (IsHighReady && !IsFiringFromStance && !Plugin.IsAiming)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + ((((1f - (fc.ErgonomicWeight / 100f)) * 0.01f) * Plugin.ADSInjuryMulti)), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    else if (IsMounting || (IsLowReady && !IsFiring && !Plugin.IsAiming))
+                    else if (IsMounting || (IsLowReady && !IsFiringFromStance && !Plugin.IsAiming))
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.03f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    else if (IsShortStock && !IsFiring && !Plugin.IsAiming)
+                    else if (IsShortStock && !IsFiringFromStance && !Plugin.IsAiming)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.02f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
@@ -239,7 +239,7 @@ namespace CombatStances
 
             if (StanceShotTime >= 0.5f)
             {
-                IsFiring = false;
+                IsFiringFromStance = false;
                 StanceShotTime = 0f;
             }
         }
@@ -337,7 +337,7 @@ namespace CombatStances
                             WasActiveAim = IsActiveAiming;
                             SetActiveAiming = true;
                         }
-                        else if (SetActiveAiming == true)
+                        else if (SetActiveAiming)
                         {
                             StanceBlender.Target = 0f;
                             IsActiveAiming = false;
@@ -361,7 +361,7 @@ namespace CombatStances
                             IsPatrolStance = false;
                             WasActiveAim = IsActiveAiming;
                             DidStanceWiggle = false;
-                            if (IsActiveAiming == false)
+                            if (!IsActiveAiming)
                             {
                                 IsHighReady = WasHighReady;
                                 IsLowReady = WasLowReady;
@@ -380,11 +380,11 @@ namespace CombatStances
                         IsLowReady = false;
                         IsActiveAiming = false;
                         IsPatrolStance = false;
-                        WasActiveAim = IsActiveAiming;
-                        WasHighReady = IsHighReady;
-                        WasLowReady = IsLowReady;
-                        WasShortStock = IsShortStock;
                         DidStanceWiggle = false;
+                        WasActiveAim = false;
+                        WasHighReady = false;
+                        WasLowReady = false;
+                        WasShortStock = IsShortStock;
                     }
 
                     //high ready
@@ -396,10 +396,10 @@ namespace CombatStances
                         IsLowReady = false;
                         IsActiveAiming = false;
                         IsPatrolStance = false;
-                        WasActiveAim = IsActiveAiming;
+                        WasActiveAim = false;
                         WasHighReady = IsHighReady;
-                        WasLowReady = IsLowReady;
-                        WasShortStock = IsShortStock;
+                        WasLowReady = false;
+                        WasShortStock = false;
                         DidStanceWiggle = false;
 
                         if (IsHighReady == true && (Plugin.RightArmBlacked == true || Plugin.LeftArmBlacked == true))
@@ -417,10 +417,10 @@ namespace CombatStances
                         IsActiveAiming = false;
                         IsShortStock = false;
                         IsPatrolStance = false;
-                        WasActiveAim = IsActiveAiming;
-                        WasHighReady = IsHighReady;
+                        WasActiveAim = false;
+                        WasHighReady = false;
                         WasLowReady = IsLowReady;
-                        WasShortStock = IsShortStock;
+                        WasShortStock = false;
                         DidStanceWiggle = false;
 
                     }
@@ -570,7 +570,6 @@ namespace CombatStances
             Quaternion pistolMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.PistolAdditionalRotationX.Value, Plugin.PistolAdditionalRotationY.Value, Plugin.PistolAdditionalRotationZ.Value));
             Quaternion pistolRevertQuaternion = Quaternion.Euler(Plugin.PistolResetRotationX.Value, Plugin.PistolResetRotationY.Value, Plugin.PistolResetRotationZ.Value);
 
-
             //I've no idea wtf is going on here but it sort of works
             float targetPos = 0.09f;
             if (!Plugin.IsBlindFiring && !StanceController.CancelPistolStance)
@@ -620,7 +619,7 @@ namespace CombatStances
                 }
                 if ((StanceController.StanceBlender.Value >= 0.95f && StanceController.StanceTargetPosition == pistolTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(logger, player, pwa, new Vector3(-20f, 1f, 10f));
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(-20f, 1f, 10f));
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -640,7 +639,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(logger, player, pwa, new Vector3(10f, 1f, -10f));
+                StanceController.doWiggleEffects(player, pwa, new Vector3(10f, 1f, -10f));
 
                 isResettingPistol = false;
                 StanceController.PistolIsCompressed = false;
@@ -651,8 +650,8 @@ namespace CombatStances
 
         public static void DoRifleStances(ManualLogSource logger, Player player, Player.FirearmController fc, bool isThirdPerson, ref EFT.Animations.ProceduralWeaponAnimation pwa, ref Quaternion stanceRotation, float dt, ref bool isResettingShortStock, ref bool hasResetShortStock, ref bool hasResetLowReady, ref bool hasResetActiveAim, ref bool hasResetHighReady, ref bool isResettingHighReady, ref bool isResettingLowReady, ref bool isResettingActiveAim, ref float rotationSpeed, float ergoDelta)
         {
-            float aimMulti = Mathf.Clamp(1f - ((1f - Plugin.AimSpeed) * 1.5f), 0.45f, 1.15f);
-            float stanceMulti = Mathf.Clamp(aimMulti * Plugin.ADSInjuryMulti * (Mathf.Max(Plugin.RemainingArmStamPercentage, 0.65f)), 0.45f, 0.95f);
+            float aimMulti = Mathf.Clamp(1f - ((1f - Plugin.AimSpeed) * 1.4f), 0.6f, 1.2f);
+            float stanceMulti = Mathf.Clamp(aimMulti * Plugin.ADSInjuryMulti * (Mathf.Max(Plugin.RemainingArmStamPercentage, 0.65f)), 0.5f, 1.2f);
             float resetAimMulti = (1f - stanceMulti) + 1f;
 
             float wiggleErgoMulti = Mathf.Clamp((aimMulti * 0.5f), 0.1f, 1f);
@@ -753,7 +752,7 @@ namespace CombatStances
                 {
                     if (!hasResetActiveAim)
                     {
-                        activeToShort = 0.6f;
+                        activeToShort = 0.65f;
                     }
                     if (!hasResetHighReady)
                     {
@@ -761,7 +760,7 @@ namespace CombatStances
                     }
                     if (!hasResetLowReady)
                     {
-                        lowToShort = 0.6f;
+                        lowToShort = 0.7f;
                     }
                 }
                 else
@@ -796,7 +795,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value > 0.95f || StanceController.StanceTargetPosition == shortStockTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(logger, player, pwa, new Vector3(10f, -5f, 10f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(10f, -5f, 10f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -815,14 +814,14 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(logger, player, pwa, new Vector3(5, -5f, -10f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(5, -5f, -10f), true);
                 stanceRotation = Quaternion.identity;
                 isResettingShortStock = false;
                 hasResetShortStock = true;
             }
 
             ////high ready////
-            if (StanceController.IsHighReady && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiring && !StanceController.CancelHighReady && !Plugin.IsBlindFiring)
+            if (StanceController.IsHighReady && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelHighReady && !Plugin.IsBlindFiring)
             {
                 float shortToHighMulti = 1.0f;
                 float lowToHighMulti = 1.0f;
@@ -842,7 +841,7 @@ namespace CombatStances
                     }
                     if (!hasResetLowReady)
                     {
-                        lowToHighMulti = 1.1f;
+                        lowToHighMulti = 1.15f;
                     }
                 }
                 else
@@ -889,7 +888,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == highReadyTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(logger, player, pwa, new Vector3(5f, 5f, 5f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(5f, 5f, 5f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -909,7 +908,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(logger, player, pwa, new Vector3(-10f, 5f, -10f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(-12f, 6f, -12f), true);
                 StanceController.DidStanceWiggle = false;
 
                 stanceRotation = Quaternion.identity;
@@ -919,7 +918,7 @@ namespace CombatStances
             }
 
             ////low ready////
-            if (StanceController.IsLowReady && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiring && !StanceController.CancelLowReady && !Plugin.IsBlindFiring)
+            if (StanceController.IsLowReady && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelLowReady && !Plugin.IsBlindFiring)
             {
                 float highToLow = 1.0f;
                 float shortToLow = 1.0f;
@@ -931,7 +930,7 @@ namespace CombatStances
                 {
                     if (!hasResetHighReady)
                     {
-                        highToLow = 1.05f;
+                        highToLow = 1.1f;
                     }
                     if (!hasResetShortStock)
                     {
@@ -973,7 +972,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == lowReadyTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(logger, player, pwa, new Vector3(5.5f, -5.5f, -5.5f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(5.5f, -5.5f, -5.5f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -994,7 +993,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(logger, player, pwa, new Vector3(2.5f, 2.5f, 5f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(4f, 4f, 7.5f), true);
                 StanceController.DidStanceWiggle = false;
                 stanceRotation = Quaternion.identity;
                 isResettingLowReady = false;
@@ -1014,11 +1013,11 @@ namespace CombatStances
                 {
                     if (!hasResetShortStock)
                     {
-                        shortToActive = 0.65f;
+                        shortToActive = 0.75f;
                     }
                     if (!hasResetHighReady)
                     {
-                        highToActive = 1f;
+                        highToActive = 1.15f;
                     }
                     if (!hasResetLowReady)
                     {
@@ -1056,7 +1055,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == activeAimTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(logger, player, pwa, new Vector3(-2.5f, -2.5f, 3f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(-2.5f, -2.5f, 10f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -1077,7 +1076,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(logger, player, pwa, new Vector3(2.5f, -2.5f, 2.5f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(-4f, -5f, 10f), true);
                 StanceController.DidStanceWiggle = false;
 
                 stanceRotation = Quaternion.identity;
@@ -1100,7 +1099,7 @@ namespace CombatStances
             }
         }
 
-        private static void doWiggleEffects(ManualLogSource logger, Player player, ProceduralWeaponAnimation pwa, Vector3 wiggleDirection, bool playSound = false, float volume = 1f)
+        private static void doWiggleEffects(Player player, ProceduralWeaponAnimation pwa, Vector3 wiggleDirection, bool playSound = false, float volume = 1f)
         {
             if (playSound)
             {
@@ -1120,7 +1119,7 @@ namespace CombatStances
             if (StanceController.IsMounting && (isMoving || !Plugin.IsAiming))
             {
                 StanceController.IsMounting = false;
-                doWiggleEffects(Logger, player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
+                doWiggleEffects(player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
             }
             if (Plugin.IsAiming && Input.GetKeyDown(Plugin.MountKeybind.Value.MainKey) && StanceController.IsBracing && player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire)
             {
@@ -1130,12 +1129,12 @@ namespace CombatStances
                     mountWeapPosition = weaponWorldPos + StanceController.CoverDirection; // + StanceController.CoverDirection
                 }
 
-                doWiggleEffects(Logger, player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
+                doWiggleEffects(player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
             }
             if (Input.GetKeyDown(Plugin.MountKeybind.Value.MainKey) && !StanceController.IsBracing && StanceController.IsMounting)
             {
                 StanceController.IsMounting = false;
-                doWiggleEffects(Logger, player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
+                doWiggleEffects(player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
             }
             if (StanceController.IsMounting)
             {

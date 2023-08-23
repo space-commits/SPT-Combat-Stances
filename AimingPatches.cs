@@ -128,8 +128,8 @@ namespace CombatStances
                     StanceController.WasActiveAim = false;
                     if (Plugin.ToggleActiveAim.Value)
                     {
-                        StanceController.IsActiveAiming = false;
                         StanceController.StanceBlender.Target = 0f;
+                        StanceController.IsActiveAiming = false;
                     }
                     wasToggled = false;
                 }
