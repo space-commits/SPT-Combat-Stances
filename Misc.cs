@@ -85,14 +85,10 @@ namespace CombatStances
                 Player player = Singleton<GameWorld>.Instance.GetAlivePlayerByProfileID(weapon.Owner.ID);
                 if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer)
                 {
-                    if (!Plugin.RecoilStandaloneIsPresent)
-                    {
-                        Plugin.HandsIntensity = __instance.HandsContainer.HandsRotation.InputIntensity;
-                        Plugin.BreathIntensity = __instance.Breath.Intensity;
-                        Plugin.RecoilIntensity = __instance.Shootingg.Intensity;
-                        Plugin.HandsDamping = __instance.HandsContainer.HandsPosition.Damping;
-                        Plugin.Convergence = __instance.HandsContainer.Recoil.ReturnSpeed;
-                    }
+                    Plugin.HandsIntensity = __instance.HandsContainer.HandsRotation.InputIntensity;
+                    Plugin.BreathIntensity = __instance.Breath.Intensity;
+                    Plugin.RecoilIntensity = __instance.Shootingg.Intensity;
+                    Plugin.HandsDamping = __instance.HandsContainer.HandsPosition.Damping;
                 }
             }
         }
@@ -219,16 +215,16 @@ namespace CombatStances
                 if (!Plugin.RecoilStandaloneIsPresent)
                 {
                     __instance.ProceduralWeaponAnimation.Shootingg.Intensity = Plugin.RecoilIntensity * mountingRecoilBonus;
-                    __instance.ProceduralWeaponAnimation.Breath.Intensity = Plugin.BreathIntensity * mountingSwayBonus; 
-                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsRotation.InputIntensity = Plugin.HandsIntensity * mountingSwayBonus; 
+                    __instance.ProceduralWeaponAnimation.Breath.Intensity = Plugin.BreathIntensity * mountingSwayBonus;
+                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsRotation.InputIntensity = Plugin.HandsIntensity * mountingSwayBonus;
                 }
 
                 if (Plugin.IsFiring && !Plugin.RecoilStandaloneIsPresent)
                 {
                     StanceController.IsPatrolStance = false;
                     __instance.HandsController.FirearmsAnimator.SetPatrol(false);
-                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping; 
-                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = Plugin.Convergence; 
+                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping;
+                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = Plugin.Convergence;
                 }
                 else if (!Plugin.IsFiring)
                 {
@@ -242,7 +238,6 @@ namespace CombatStances
                         {
                             resetSpeed = 1f;
                         }
-
                         __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Mathf.Lerp(__instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping, 0.45f, resetSpeed);
                     }
                     else

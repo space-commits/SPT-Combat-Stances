@@ -774,6 +774,9 @@ namespace CombatStances
         private static Quaternion stanceRotation = Quaternion.identity;
         private static Vector3 mountWeapPosition = Vector3.zero;
 
+        private static Vector3 currentRecoil = Vector3.zero;
+        private static Vector3 targetRecoil = Vector3.zero;
+
         private static float stanceRotationSpeed = 1f;
 
         protected override MethodBase GetTargetMethod()
@@ -853,8 +856,14 @@ namespace CombatStances
                     bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
                     currentRotation = Quaternion.Slerp(currentRotation, __instance.IsAiming && allStancesReset ? aimingQuat : doStanceRotation ? stanceRotation : Quaternion.identity, doStanceRotation ? stanceRotationSpeed * Plugin.StanceRotationSpeedMulti.Value : __instance.IsAiming ? 8f * aimSpeed * dt : 8f * dt);
-
                     Quaternion rhs = Quaternion.Euler(pitch * overlappingBlindfire * blindFireRotation);
+
+                    if (Plugin.RecoilStandaloneIsPresent) 
+                    {
+                        StanceController.DoCantedRecoil(ref targetRecoil, ref currentRecoil, ref weapRotation);
+
+                    }
+
                     __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(weaponWorldPos, weapRotation * rhs * currentRotation);
 
                     if (isPistol && Plugin.EnableAltPistol.Value && !StanceController.IsPatrolStance)
