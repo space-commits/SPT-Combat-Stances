@@ -224,7 +224,7 @@ namespace CombatStances
         {
             DampingTimer += Time.deltaTime;
 
-            if (DampingTimer >= 0.25f)
+            if (DampingTimer >= 0.05f)
             {
                 CanResetDamping = true;
                 DoDampingTimer = false;
@@ -570,6 +570,9 @@ namespace CombatStances
             Quaternion pistolMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.PistolAdditionalRotationX.Value, Plugin.PistolAdditionalRotationY.Value, Plugin.PistolAdditionalRotationZ.Value));
             Quaternion pistolRevertQuaternion = Quaternion.Euler(Plugin.PistolResetRotationX.Value, Plugin.PistolResetRotationY.Value, Plugin.PistolResetRotationZ.Value);
 
+            bool isMoving = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D);
+            float movementFactor = 1.3f;
+
             //I've no idea wtf is going on here but it sort of works
             float targetPos = 0.09f;
             if (!Plugin.IsBlindFiring && !StanceController.CancelPistolStance)
@@ -619,7 +622,7 @@ namespace CombatStances
                 }
                 if ((StanceController.StanceBlender.Value >= 0.95f && StanceController.StanceTargetPosition == pistolTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(player, pwa, new Vector3(-20f, 1f, 10f));
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(-20f, 1f, 10f) * (isMoving ? movementFactor : 1f));
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -639,7 +642,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(player, pwa, new Vector3(10f, 1f, -10f));
+                StanceController.doWiggleEffects(player, pwa, new Vector3(10f, 1f, -10f) * (isMoving ? movementFactor : 1f));
 
                 isResettingPistol = false;
                 StanceController.PistolIsCompressed = false;
@@ -688,6 +691,9 @@ namespace CombatStances
             Quaternion shortStockMiniTargetQuaternion = Quaternion.Euler(new Vector3(Plugin.ShortStockAdditionalRotationX.Value * resetAimMulti, Plugin.ShortStockAdditionalRotationY.Value * resetAimMulti, Plugin.ShortStockAdditionalRotationZ.Value * resetAimMulti));
             Quaternion shortStockRevertQuaternion = Quaternion.Euler(Plugin.ShortStockResetRotationX.Value * resetAimMulti, Plugin.ShortStockResetRotationY.Value * resetAimMulti, Plugin.ShortStockResetRotationZ.Value * resetAimMulti);
             Vector3 shortStockTargetPosition = new Vector3(Plugin.ShortStockOffsetX.Value, Plugin.ShortStockOffsetY.Value, Plugin.ShortStockOffsetZ.Value * thirdPersonMulti);
+
+            bool isMoving = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D);
+            float movementFactor = 1.3f;
 
             //for setting baseline position
             if (!Plugin.IsBlindFiring)
@@ -795,7 +801,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value > 0.95f || StanceController.StanceTargetPosition == shortStockTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(player, pwa, new Vector3(10f, -5f, 10f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(10f, -5f, 10f) * (isMoving ? movementFactor : 1f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -814,7 +820,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(player, pwa, new Vector3(5, -5f, -10f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(5, -5f, -10f) * (isMoving ? movementFactor : 1f), true);
                 stanceRotation = Quaternion.identity;
                 isResettingShortStock = false;
                 hasResetShortStock = true;
@@ -888,7 +894,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == highReadyTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(player, pwa, new Vector3(5f, 5f, 5f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(5f, 5f, 5f) * (isMoving ? movementFactor : 1f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -908,7 +914,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(player, pwa, new Vector3(-12f, 6f, -12f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(-12f, 6f, -12f) * (isMoving ? movementFactor : 1f), true);
                 StanceController.DidStanceWiggle = false;
 
                 stanceRotation = Quaternion.identity;
@@ -972,7 +978,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == lowReadyTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(player, pwa, new Vector3(5.5f, -5.5f, -5.5f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(5f, -5f, -6f) * (isMoving ? movementFactor : 1f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -993,7 +999,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(player, pwa, new Vector3(4f, 4f, 7.5f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(4.5f, 4.5f, 7.5f) * (isMoving ? movementFactor : 1f), true);
                 StanceController.DidStanceWiggle = false;
                 stanceRotation = Quaternion.identity;
                 isResettingLowReady = false;
@@ -1055,7 +1061,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == activeAimTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(player, pwa, new Vector3(-2.5f, -2.5f, 10f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(-2.5f, -2.5f, 10f) * (isMoving ? movementFactor : 1f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -1076,7 +1082,7 @@ namespace CombatStances
                     StanceController.DoDampingTimer = true;
                 }
 
-                StanceController.doWiggleEffects(player, pwa, new Vector3(-4f, -5f, 10f), true);
+                StanceController.doWiggleEffects(player, pwa, new Vector3(-4f, -5f, 10f) * (isMoving ? movementFactor : 1f), true);
                 StanceController.DidStanceWiggle = false;
 
                 stanceRotation = Quaternion.identity;

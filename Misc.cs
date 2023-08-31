@@ -219,16 +219,16 @@ namespace CombatStances
                 if (!Plugin.RecoilStandaloneIsPresent)
                 {
                     __instance.ProceduralWeaponAnimation.Shootingg.Intensity = Plugin.RecoilIntensity * mountingRecoilBonus;
-                    __instance.ProceduralWeaponAnimation.Breath.Intensity = Plugin.BreathIntensity * mountingSwayBonus; //default if no recoil standalone, otherwise 
-                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsRotation.InputIntensity = Plugin.HandsIntensity * mountingSwayBonus; //default if no recoil standalone, otherwise 
+                    __instance.ProceduralWeaponAnimation.Breath.Intensity = Plugin.BreathIntensity * mountingSwayBonus; 
+                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsRotation.InputIntensity = Plugin.HandsIntensity * mountingSwayBonus; 
                 }
 
                 if (Plugin.IsFiring && !Plugin.RecoilStandaloneIsPresent)
                 {
                     StanceController.IsPatrolStance = false;
                     __instance.HandsController.FirearmsAnimator.SetPatrol(false);
-                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping; //default if no recoil standalone, otherwise its value
-                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = Plugin.Convergence; //default if no recoil standalone, otherwise its value
+                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping; 
+                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = Plugin.Convergence; 
                 }
                 else if (!Plugin.IsFiring)
                 {
@@ -236,7 +236,14 @@ namespace CombatStances
 
                     if (StanceController.CanResetDamping)
                     {
-                        __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Mathf.Lerp(__instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping, 0.45f, 0.01f);
+                        float resetSpeed = 0.01f;
+                        bool isMoving = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D);
+                        if (isMoving && (StanceController.WasLowReady || StanceController.WasHighReady || StanceController.WasShortStock || StanceController.WasActiveAim))
+                        {
+                            resetSpeed = 1f;
+                        }
+
+                        __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Mathf.Lerp(__instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping, 0.45f, resetSpeed);
                     }
                     else
                     {
