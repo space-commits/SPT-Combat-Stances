@@ -978,7 +978,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == lowReadyTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(player, pwa, new Vector3(5f, -5f, -6f) * (isMoving ? movementFactor : 1f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(5f, -5f, -5f) * (isMoving ? movementFactor : 1f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -1154,7 +1154,7 @@ namespace CombatStances
             if (Plugin.IsFiring)
             {
                 float recoilAmount = Plugin.TotalHRecoil / 35f;
-                float recoilSpeed = Plugin.TotalConvergence * 0.6f;
+                float recoilSpeed = Plugin.TotalConvergence * 0.75f;
                 float totalRecoil = Mathf.Lerp(-recoilAmount, recoilAmount, Mathf.PingPong(Time.time * recoilSpeed, 1.0f));
                 targetRecoil = new Vector3(0f, totalRecoil, 0f);
             }

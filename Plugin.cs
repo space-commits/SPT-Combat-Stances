@@ -319,11 +319,11 @@ namespace CombatStances
                 warnedUser = true;
                 if (Chainloader.PluginInfos.ContainsKey("RealismMod"))
                 {
-                    NotificationManagerClass.DisplayWarningNotification("ERROR: REALISM MOD IS ALSO INSTALLED! REALISM ALREADY CONTAINS COMBAT STNACES, UNINSTALL ONE OF THESE MODS!", EFT.Communications.ENotificationDurationType.Infinite);
+                    NotificationManagerClass.DisplayWarningNotification("ERROR: REALISM MOD IS ALSO INSTALLED! REALISM ALREADY CONTAINS COMBAT STANCES, UNINSTALL ONE OF THESE MODS!", EFT.Communications.ENotificationDurationType.Infinite);
                 }
                 if (Chainloader.PluginInfos.ContainsKey("StanceRecoilBridge") && !Chainloader.PluginInfos.ContainsKey("RecoilStandalone"))
                 {
-                    NotificationManagerClass.DisplayWarningNotification("ERROR: RECOIL OVERHAUL COMPATIBILITY BRIDGE IS INSTALLD BUT RECOIL STANDALONE IS NOT! REMOVE THE BRIDGE OR INSTALL RECOIL OVERHAUL!", EFT.Communications.ENotificationDurationType.Infinite);
+                    NotificationManagerClass.DisplayWarningNotification("ERROR: RECOIL OVERHAUL COMPATIBILITY BRIDGE IS INSTALLED BUT RECOIL STANDALONE IS NOT! REMOVE THE BRIDGE OR INSTALL RECOIL OVERHAUL!", EFT.Communications.ENotificationDurationType.Infinite);
                 }
             }
             if ((int)Time.time % 5 != 0)
