@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-
+using InventoryItemHandler = GClass2672;
 
 
 namespace CombatStances
@@ -27,38 +27,38 @@ namespace CombatStances
             return x.IsProtruding();
         }
 
+        //bsg's bullshit
         private static bool IsAllowedADSWithFS(Weapon weapon, Player.FirearmController fc)
         {
             if (weapon.CompactHandling)
             {
-                bool flag = false;
-                IEnumerable<ProtrudableComponent> enumerable = Enumerable.Empty<ProtrudableComponent>();
+                bool stockIsDeployed = false;
+                IEnumerable<ProtrudableComponent> foldableStockComponents = Enumerable.Empty<ProtrudableComponent>();
                 FoldableComponent foldableComponent;
-                if (GClass2428.CanFold(weapon, out foldableComponent))
+                if (InventoryItemHandler.CanFold(weapon, out foldableComponent))
                 {
                     if (foldableComponent.FoldedSlot == null)
                     {
-                        flag |= !foldableComponent.Folded;
+                        stockIsDeployed |= !foldableComponent.Folded;
                     }
                     else if (foldableComponent.FoldedSlot.ContainedItem != null)
                     {
-                        enumerable = Enumerable.ToArray<ProtrudableComponent>(foldableComponent.FoldedSlot.ContainedItem.GetItemComponentsInChildren<ProtrudableComponent>(true));
-                        bool flag2 = flag;
-                        bool flag3;
+                        foldableStockComponents = Enumerable.ToArray<ProtrudableComponent>(foldableComponent.FoldedSlot.ContainedItem.GetItemComponentsInChildren<ProtrudableComponent>(true));
+                        bool stockIsProtruding;
                         if (!foldableComponent.Folded)
                         {
-                            flag3 = Enumerable.Any<ProtrudableComponent>(enumerable, new Func<ProtrudableComponent, bool>(checkProtruding));
+                            stockIsProtruding = Enumerable.Any<ProtrudableComponent>(foldableStockComponents, new Func<ProtrudableComponent, bool>(checkProtruding));
                         }
                         else
                         {
-                            flag3 = false;
+                            stockIsProtruding = false;
                         }
-                        flag = (flag2 || flag3);
+                        stockIsDeployed = (stockIsDeployed || stockIsProtruding);
                     }
                 }
-                IEnumerable<ProtrudableComponent> enumerable2 = Enumerable.Except<ProtrudableComponent>(weapon.GetItemComponentsInChildren<ProtrudableComponent>(true), enumerable);
-                flag |= Enumerable.Any<ProtrudableComponent>(enumerable2, new Func<ProtrudableComponent, bool>(checkProtruding));
-                return !flag;
+                IEnumerable<ProtrudableComponent> stocks = Enumerable.Except<ProtrudableComponent>(weapon.GetItemComponentsInChildren<ProtrudableComponent>(true), foldableStockComponents);
+                stockIsDeployed |= Enumerable.Any<ProtrudableComponent>(stocks, new Func<ProtrudableComponent, bool>(checkProtruding));
+                return !stockIsDeployed;
             }
 
             if (weapon.WeapClass == "pistol")
@@ -115,6 +115,7 @@ namespace CombatStances
 
                 if (isAiming)
                 {
+                    StanceController.IsPatrolStance = false;
                     player.MovementContext.SetAimingSlowdown(true, 0.33f);
                 }
 
@@ -127,8 +128,8 @@ namespace CombatStances
                     StanceController.WasActiveAim = false;
                     if (Plugin.ToggleActiveAim.Value)
                     {
+                        StanceController.StanceBlender.Target = 0f;
                         StanceController.IsActiveAiming = false;
-                        Plugin.StanceBlender.Target = 0f;
                     }
                     wasToggled = false;
                 }
