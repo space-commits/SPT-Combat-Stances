@@ -176,6 +176,9 @@ namespace CombatStances
         public static bool LeftArmBlacked;
 
         public static bool IsFiring = false;
+        public static bool IsFiringWiggle = false;
+        public static float FiringTimer = 0.0f;
+        public static float WiggleTimer = 0.0f;
 
         public static bool IsSprinting;
         public static bool DidWeaponSwap;
@@ -202,7 +205,7 @@ namespace CombatStances
         public static float AimSkillADSBuff = 0f;
         public static float AimMoveSpeedInjuryReduction;
 
-        public static float Timer = 0.0f;
+
         public static int ShotCount = 0;
         public static int PrevShotCount = ShotCount;
 
@@ -336,19 +339,26 @@ namespace CombatStances
             {
                 if (Plugin.ShotCount > Plugin.PrevShotCount)
                 {
+                    Plugin.IsFiringWiggle = true;
                     StanceController.IsFiringFromStance = true;
                     Plugin.PrevShotCount = Plugin.ShotCount;
                 }
 
                 if (Plugin.ShotCount == Plugin.PrevShotCount)
                 {
-                    Plugin.Timer += Time.deltaTime;
-                    if (Plugin.Timer >= 0.14f)
+                    Plugin.FiringTimer += Time.deltaTime;
+                    Plugin.WiggleTimer += Time.deltaTime;
+                    if (Plugin.FiringTimer >= 0.14f)
                     {
                         Plugin.IsFiring = false;
                         Plugin.ShotCount = 0;
                         Plugin.PrevShotCount = 0;
-                        Plugin.Timer = 0f;
+                        Plugin.FiringTimer = 0f;
+                    }
+                    if (Plugin.WiggleTimer >= 0.1f)
+                    {
+                        Plugin.IsFiringWiggle = false;
+                        Plugin.WiggleTimer = 0f;
                     }
                     StanceController.StanceShotTimer();
                 }

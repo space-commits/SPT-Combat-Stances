@@ -129,7 +129,7 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
-                Plugin.Timer = 0f;
+                Plugin.FiringTimer = 0f;
                 StanceController.StanceShotTime = 0f;
                 StanceController.IsFiringFromStance = true;
                 Plugin.IsFiring = true;
