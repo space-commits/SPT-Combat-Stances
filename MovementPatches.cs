@@ -31,8 +31,7 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(MovementContext), "player_0").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
-                float stanceFactor = StanceController.IsPatrolStance ? 1.25f : StanceController.IsHighReady ? 0.9f : 1f;
-
+                float stanceFactor = StanceController.IsPatrolStance ? 1.25f : StanceController.IsHighReady || StanceController.IsShortStock ? 0.95f : 1f;
                 __result = Mathf.Clamp(speed, 0f, __instance.StateSpeedLimit * stanceFactor);
                 return false;
             }

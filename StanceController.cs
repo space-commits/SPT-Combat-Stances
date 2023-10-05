@@ -596,7 +596,7 @@ namespace CombatStances
                 hasResetPistolPos = false;
 
                 StanceController.StanceBlender.Speed = Plugin.PistolPosSpeedMulti.Value * stanceMulti;
-                StanceController.StanceTargetPosition = Vector3.Lerp(StanceController.StanceTargetPosition, pistolTargetPosition, Plugin.StanceTransitionSpeedMulti.Value * stanceMulti * dt);
+                StanceController.StanceTargetPosition = Vector3.Lerp(StanceController.StanceTargetPosition, pistolTargetPosition, Plugin.StanceTransitionSpeedMulti.Value * stanceMulti * 0.1f);
 
                 rotationSpeed = 4f * stanceMulti * dt * Plugin.PistolRotationSpeedMulti.Value * stanceMulti * (isThirdPerson ? Plugin.ThirdPersonRotationSpeed.Value : 1f);
                 stanceRotation = pistolTargetQuaternion;
@@ -978,7 +978,7 @@ namespace CombatStances
 
                 if ((StanceController.StanceBlender.Value >= 0.95f || StanceController.StanceTargetPosition == lowReadyTargetPosition) && !StanceController.DidStanceWiggle)
                 {
-                    StanceController.doWiggleEffects(player, pwa, new Vector3(5f, -5f, -5f) * (isMoving ? movementFactor : 1f), true);
+                    StanceController.doWiggleEffects(player, pwa, new Vector3(4f, -4f, -4f) * (isMoving ? movementFactor : 1f), true);
                     StanceController.DidStanceWiggle = true;
                 }
             }
@@ -1151,7 +1151,7 @@ namespace CombatStances
 
         public static void DoCantedRecoil(ref Vector3 targetRecoil, ref Vector3 currentRecoil, ref Quaternion weapRotation)
         {
-            if (Plugin.IsFiring)
+            if (Plugin.IsFiringWiggle)
             {
                 float recoilAmount = Plugin.TotalHRecoil / 35f;
                 float recoilSpeed = Plugin.TotalConvergence * 0.75f;
@@ -1160,7 +1160,7 @@ namespace CombatStances
             }
             else
             {
-                targetRecoil = Vector3.zero;
+                targetRecoil = Vector3.Lerp(targetRecoil, Vector3.zero, 0.1f);
             }
 
             currentRecoil = Vector3.Lerp(currentRecoil, targetRecoil, 1f);

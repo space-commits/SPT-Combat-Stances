@@ -861,7 +861,6 @@ namespace CombatStances
                     if (Plugin.RecoilStandaloneIsPresent) 
                     {
                         StanceController.DoCantedRecoil(ref targetRecoil, ref currentRecoil, ref weapRotation);
-
                     }
 
                     __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(weaponWorldPos, weapRotation * rhs * currentRotation);
