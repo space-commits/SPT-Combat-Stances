@@ -13,8 +13,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using EFT.Animations;
-using LightStruct = GStruct154;
-using GlobalValues = GClass1710;
+using LightStruct = GStruct155;
 
 namespace CombatStances
 {
@@ -703,7 +702,7 @@ namespace CombatStances
 
             if (Plugin.EnableTacSprint.Value && (StanceController.IsHighReady || StanceController.WasHighReady) && !Plugin.RightArmBlacked)
             {
-                player.BodyAnimatorCommon.SetFloat(GlobalValues.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
+                player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
                 if (!setRunAnim)
                 {
                     setRunAnim = true;
@@ -714,7 +713,7 @@ namespace CombatStances
             {
                 if (!resetRunAnim)
                 {
-                    player.BodyAnimatorCommon.SetFloat(GlobalValues.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
+                    player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
                     resetRunAnim = true;
                     setRunAnim = false;
                 }
@@ -1096,7 +1095,7 @@ namespace CombatStances
         {
             if (playSound)
             {
-                AccessTools.Method(typeof(Player), "method_40").Invoke(player, new object[] { 2f });
+                AccessTools.Method(typeof(Player), "method_41").Invoke(player, new object[] { 2f });
             }
 
             for (int i = 0; i < pwa.Shootingg.ShotVals.Length; i++)
@@ -1109,7 +1108,7 @@ namespace CombatStances
         {
             if (playSound)
             {
-                AccessTools.Method(typeof(Player), "method_40").Invoke(player, new object[] { volume });
+                AccessTools.Method(typeof(Player), "method_41").Invoke(player, new object[] { volume });
             }
 
             for (int i = 0; i < pwa.Shootingg.ShotVals.Length; i++)
@@ -1118,16 +1117,19 @@ namespace CombatStances
             }
         }
 
-        public static void DoMounting(ManualLogSource Logger, Player player, ProceduralWeaponAnimation pwa, ref Vector3 weaponWorldPos, ref Vector3 mountWeapPosition)
+        private static bool needToReset = false;
+        private static Vector3 currentMountedPos = Vector3.zero;
+        private static float timer = 0f;
+        public static void DoMounting(ManualLogSource Logger, Player player, ProceduralWeaponAnimation pwa, ref Vector3 weaponWorldPos, ref Vector3 mountWeapPosition, float dt, Vector3 referencePos)
         {
             bool isMoving = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D);
 
-            if (StanceController.IsMounting && (isMoving || !Plugin.IsAiming))
+            if (StanceController.IsMounting && isMoving)
             {
                 StanceController.IsMounting = false;
                 doWiggleEffects(player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
             }
-            if (Plugin.IsAiming && Input.GetKeyDown(Plugin.MountKeybind.Value.MainKey) && StanceController.IsBracing && player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire)
+            if (Input.GetKeyDown(Plugin.MountKeybind.Value.MainKey) && StanceController.IsBracing && player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire)
             {
                 StanceController.IsMounting = !StanceController.IsMounting;
                 if (StanceController.IsMounting)
@@ -1142,10 +1144,24 @@ namespace CombatStances
                 StanceController.IsMounting = false;
                 doWiggleEffects(player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
             }
+
             if (StanceController.IsMounting)
             {
+                needToReset = true;
                 AccessTools.Field(typeof(TurnAwayEffector), "_turnAwayThreshold").SetValue(pwa.TurnAway, 1f);
                 weaponWorldPos = new Vector3(mountWeapPosition.x, mountWeapPosition.y, weaponWorldPos.z); //this makes it feel less clamped to cover but allows h recoil + StanceController.CoverDirection
+                currentMountedPos = weaponWorldPos;
+            }
+            else if (!isMoving && needToReset && mountWeapPosition != referencePos && timer < 0.3f)
+            {
+                timer += dt;
+                currentMountedPos = Vector3.Lerp(currentMountedPos, referencePos, 0.2f);
+                weaponWorldPos = currentMountedPos;
+            }
+            else
+            {
+                needToReset = false;
+                timer = 0f;
             }
         }
 

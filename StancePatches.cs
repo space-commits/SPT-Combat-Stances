@@ -12,11 +12,11 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
-using LightStruct = GStruct154;
-using GlobalValues = GClass1710;
-using PlayerInterface = GInterface114;
 using EFT.Animations;
 using static EFT.Player;
+using LightStruct = GStruct155;
+using PlayerInterface = GInterface113;
+using CastingClass = GClass570;
 
 namespace CombatStances
 {
@@ -24,11 +24,11 @@ namespace CombatStances
     {
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(SkillsClass).GetMethod("OnWeaponDraw", BindingFlags.Instance | BindingFlags.Public);
+            return typeof(SkillManager).GetMethod("OnWeaponDraw", BindingFlags.Instance | BindingFlags.Public);
         }
 
         [PatchPostfix]
-        private static void PatchPostfix(SkillsClass __instance, Item item)
+        private static void PatchPostfix(SkillManager __instance, Item item)
         {
             if (item?.Owner?.ID != null && (item.Owner.ID.StartsWith("pmc") || item.Owner.ID.StartsWith("scav")))
             {
@@ -101,10 +101,9 @@ namespace CombatStances
 
     public class CollisionPatch : ModulePatch
     {
-        protected override MethodBase GetTargetMethod()
-        {
-            return typeof(Player.FirearmController).GetMethod("method_8", BindingFlags.Instance | BindingFlags.NonPublic);
-        }
+        private static FieldInfo playerField;
+        private static FieldInfo hitIgnoreField;
+        private static Player player;
 
         private static int timer = 0;
 
@@ -135,6 +134,14 @@ namespace CombatStances
             }
         }
 
+        protected override MethodBase GetTargetMethod()
+        {
+            playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
+            hitIgnoreField = AccessTools.Field(typeof(EFT.Player.FirearmController), "func_1");
+
+            return typeof(Player.FirearmController).GetMethod("method_8", BindingFlags.Instance | BindingFlags.NonPublic);
+        }
+
         private static void doStability(bool isTop, bool isRightide, string weapClass)
         {
             if (!StanceController.IsMounting)
@@ -156,7 +163,7 @@ namespace CombatStances
         [PatchPrefix]
         private static void PatchPrefix(Player.FirearmController __instance, Vector3 origin, float ln, Vector3? weaponUp = null)
         {
-            Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
+            player = (Player)playerField.GetValue(__instance);
             if (player.IsYourPlayer)
             {
                 timer += 1;
@@ -164,8 +171,7 @@ namespace CombatStances
                 {
                     timer = 0;
 
-                    int int_0 = (int)AccessTools.Field(typeof(EFT.Player.FirearmController), "int_0").GetValue(__instance);
-                    RaycastHit[] raycastHit_0 = AccessTools.StaticFieldRefAccess<EFT.Player.FirearmController, RaycastHit[]>("raycastHit_0");
+                    RaycastHit[] raycastArr = AccessTools.StaticFieldRefAccess<EFT.Player.FirearmController, RaycastHit[]>("raycastHit_0");
                     Func<RaycastHit, bool> func_1 = (Func<RaycastHit, bool>)AccessTools.Field(typeof(EFT.Player.FirearmController), "func_1").GetValue(__instance);
 
                     string weapClass = __instance.Item.WeapClass;
@@ -189,21 +195,21 @@ namespace CombatStances
                                     DebugGizmos.SingleObjects.Line(startRight, rightDirection, Color.yellow, 0.02f, true, 0.3f, true);*/
 
                     RaycastHit raycastHit;
-                    if (GClass682.Linecast(startDown, forwardDirection, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS, false, raycastHit_0, func_1))
+                    if (CastingClass.Linecast(startDown, forwardDirection, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS, false, raycastArr, func_1))
                     {
                         doStability(true, false, weapClass);
                         StanceController.CoverWiggleDirection = new Vector3(wiggleAmount, 0f, 0f);
                         StanceController.CoverDirection = new Vector3(0f, -moveToCoverOffset, 0f);
                         return;
                     }
-                    if (GClass682.Linecast(startLeft, leftDirection, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS, false, raycastHit_0, func_1))
+                    if (CastingClass.Linecast(startLeft, leftDirection, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS, false, raycastArr, func_1))
                     {
                         doStability(false, false, weapClass);
                         StanceController.CoverWiggleDirection = new Vector3(0f, wiggleAmount, 0f);
                         StanceController.CoverDirection = new Vector3(moveToCoverOffset, 0f, 0f);
                         return;
                     }
-                    if (GClass682.Linecast(startRight, rightDirection, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS, false, raycastHit_0, func_1))
+                    if (CastingClass.Linecast(startRight, rightDirection, out raycastHit, EFTHardSettings.Instance.WEAPON_OCCLUSION_LAYERS, false, raycastArr, func_1))
                     {
                         doStability(false, true, weapClass);
                         StanceController.CoverWiggleDirection = new Vector3(0f, -wiggleAmount, 0f);
@@ -241,41 +247,49 @@ namespace CombatStances
 
     public class WeaponOverlappingPatch : ModulePatch
     {
+        private static FieldInfo weaponLnField;
+        private static FieldInfo playerField;
+
         protected override MethodBase GetTargetMethod()
         {
+            playerField = AccessTools.Field(typeof(EFT.Player.FirearmController), "_player");
+            weaponLnField = AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn");
             return typeof(Player.FirearmController).GetMethod("WeaponOverlapping", BindingFlags.Instance | BindingFlags.Public);
         }
 
         [PatchPrefix]
         private static void Prefix(Player.FirearmController __instance)
         {
-            Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
+            Player player = (Player)playerField.GetValue(__instance);
 
             if (player.IsYourPlayer == true)
             {
-                if ((StanceController.IsHighReady == true || StanceController.IsLowReady == true || StanceController.IsShortStock == true))
-                {
-                    AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn").SetValue(__instance, Plugin.NewWeaponLength * 0.8f);
-                    return;
-                }
-                if (StanceController.WasShortStock == true && Plugin.IsAiming)
-                {
-                    AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn").SetValue(__instance, Plugin.NewWeaponLength * 0.7f);
-                    return;
-                }
                 if (__instance.Item.WeapClass == "pistol")
                 {
                     if (StanceController.PistolIsCompressed == true)
                     {
-                        AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn").SetValue(__instance, Plugin.NewWeaponLength * 0.75f);
+                        weaponLnField.SetValue(__instance, Plugin.NewWeaponLength * 0.75f);
                     }
                     else
                     {
-                        AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn").SetValue(__instance, Plugin.NewWeaponLength * 0.85f);
+                        weaponLnField.SetValue(__instance, Plugin.NewWeaponLength * 0.85f);
                     }
                     return;
                 }
-                AccessTools.Field(typeof(EFT.Player.FirearmController), "WeaponLn").SetValue(__instance, Plugin.NewWeaponLength);
+                else 
+                {
+                    if (StanceController.IsHighReady == true || StanceController.IsLowReady == true || StanceController.IsShortStock == true)
+                    {
+                        weaponLnField.SetValue(__instance, Plugin.NewWeaponLength * 0.8f);
+                        return;
+                    }
+                    if (StanceController.WasShortStock == true && Plugin.IsAiming)
+                    {
+                        weaponLnField.SetValue(__instance, Plugin.NewWeaponLength * 0.7f);
+                        return;
+                    }
+                }
+                weaponLnField.SetValue(__instance, Plugin.NewWeaponLength);
                 return;
             }
         }
@@ -292,7 +306,7 @@ namespace CombatStances
         private static void PatchPostfix(EFT.Animations.ProceduralWeaponAnimation __instance)
         {
 
-            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "ginterface114_0").GetValue(__instance);
+            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
 
             if (playerInterface != null && playerInterface.Weapon != null)
             {
@@ -311,7 +325,7 @@ namespace CombatStances
 
     public class ZeroAdjustmentsPatch : ModulePatch
     {
-        private static FieldInfo pitchField;
+        private static FieldInfo blindFireStrengthField;
         private static FieldInfo blindfireRotationField;
         private static PropertyInfo overlappingBlindfireField;
         private static FieldInfo blindfirePositionField;
@@ -320,10 +334,10 @@ namespace CombatStances
 
         protected override MethodBase GetTargetMethod()
         {
-            pitchField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_14");
-            blindfireRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "vector3_6");
+            blindFireStrengthField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindfireStrength");
+            blindfireRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindFireRotation");
             overlappingBlindfireField = AccessTools.Property(typeof(EFT.Animations.ProceduralWeaponAnimation), "Single_3");
-            blindfirePositionField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "vector3_5");
+            blindfirePositionField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindFirePosition");
 
             return typeof(EFT.Animations.ProceduralWeaponAnimation).GetMethod("ZeroAdjustments", BindingFlags.Instance | BindingFlags.Public);
         }
@@ -331,7 +345,7 @@ namespace CombatStances
         [PatchPrefix]
         private static bool PatchPrefix(EFT.Animations.ProceduralWeaponAnimation __instance)
         {
-            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "ginterface114_0").GetValue(__instance);
+            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
 
             if (playerInterface != null && playerInterface.Weapon != null)
             {
@@ -357,7 +371,7 @@ namespace CombatStances
                     {
                         Plugin.IsBlindFiring = true;
                         float pitch = ((Mathf.Abs(__instance.Pitch) < 45f) ? 1f : ((90f - Mathf.Abs(__instance.Pitch)) / 45f));
-                        pitchField.SetValue(__instance, pitch);
+                        blindFireStrengthField.SetValue(__instance, pitch);
                         blindfireRotationField.SetValue(__instance, ((blindFireBlendValue > 0f) ? (__instance.BlindFireRotation * blindFireAbs) : (__instance.SideFireRotation * blindFireAbs)));
                         targetPosition = ((blindFireBlendValue > 0f) ? (__instance.BlindFireOffset * blindFireAbs) : (__instance.SideFireOffset * blindFireAbs));
                         targetPosition += StanceController.StanceTargetPosition;
@@ -373,7 +387,7 @@ namespace CombatStances
                     if (stanceAbs > 0f)
                     {
                         float pitch = ((Mathf.Abs(__instance.Pitch) < 45f) ? 1f : ((90f - Mathf.Abs(__instance.Pitch)) / 45f));
-                        pitchField.SetValue(__instance, pitch);
+                        blindFireStrengthField.SetValue(__instance, pitch);
                         targetPosition = StanceController.StanceTargetPosition * stanceAbs;
                         __instance.HandsContainer.HandsPosition.Zero = __instance.PositionZeroSum + pitch * targetPosition;
                         __instance.HandsContainer.HandsRotation.Zero = __instance.RotationZeroSum;
@@ -391,32 +405,36 @@ namespace CombatStances
 
     public class RotatePatch : ModulePatch
     {
+        private static FieldInfo movementContextField;
+        private static FieldInfo playerField;
+        private static Vector2 initialRotation = Vector3.zero;
+
         protected override MethodBase GetTargetMethod()
         {
+            movementContextField = AccessTools.Field(typeof(MovementState), "MovementContext");
+            playerField = AccessTools.Field(typeof(MovementContext), "_player");
             return typeof(MovementState).GetMethod("Rotate", BindingFlags.Instance | BindingFlags.Public);
         }
-
-        private static Vector2 initialRotation = Vector3.zero;
 
         [PatchPrefix]
         private static bool Prefix(MovementState __instance, ref Vector2 deltaRotation, bool ignoreClamp)
         {
-            GClass1667 MovementContext = (GClass1667)AccessTools.Field(typeof(MovementState), "MovementContext").GetValue(__instance);
-            Player player = (Player)AccessTools.Field(typeof(GClass1667), "player_0").GetValue(MovementContext);
+            MovementContext movementContext = (MovementContext)movementContextField.GetValue(__instance);
+            Player player = (Player)playerField.GetValue(movementContext);
 
             if (player.IsYourPlayer)
             {
 
                 if (!StanceController.IsMounting)
                 {
-                    initialRotation = MovementContext.Rotation;
+                    initialRotation = movementContext.Rotation;
                 }
 
                 if (StanceController.IsMounting && !ignoreClamp)
                 {
                     FirearmController fc = player.HandsController as FirearmController;
 
-                    Vector2 currentRotation = MovementContext.Rotation;
+                    Vector2 currentRotation = movementContext.Rotation;
 
                     deltaRotation *= (fc.AimingSensitivity * 0.9f);
 
@@ -436,9 +454,9 @@ namespace CombatStances
 
                     deltaRotation = new Vector2(clampedX - currentRotation.x, clampedY - currentRotation.y);
 
-                    deltaRotation = MovementContext.ClampRotation(deltaRotation);
+                    deltaRotation = movementContext.ClampRotation(deltaRotation);
 
-                    MovementContext.Rotation += deltaRotation;
+                    movementContext.Rotation += deltaRotation;
 
                     return false;
                 }
@@ -449,8 +467,13 @@ namespace CombatStances
 
     public class SetTiltPatch : ModulePatch
     {
+        private static FieldInfo movementContextField;
+        private static FieldInfo playerField;
+
         protected override MethodBase GetTargetMethod()
         {
+            movementContextField = AccessTools.Field(typeof(MovementState), "MovementContext");
+            playerField = AccessTools.Field(typeof(MovementContext), "_player");
             return typeof(MovementState).GetMethod("SetTilt", BindingFlags.Instance | BindingFlags.Public);
         }
 
@@ -460,16 +483,17 @@ namespace CombatStances
         [PatchPrefix]
         private static void Prefix(MovementState __instance, float tilt)
         {
-            GClass1667 MovementContext = (GClass1667)AccessTools.Field(typeof(MovementState), "MovementContext").GetValue(__instance);
-            Player player_0 = (Player)AccessTools.Field(typeof(GClass1667), "player_0").GetValue(MovementContext);
-            if (player_0.IsYourPlayer)
+            MovementContext movementContext = (MovementContext)movementContextField.GetValue(__instance);
+            Player player = (Player)playerField.GetValue(movementContext);
+
+            if (player.IsYourPlayer)
             {
                 if (!StanceController.IsMounting)
                 {
                     currentTilt = tilt;
-                    currentPoseLevel = MovementContext.PoseLevel;
+                    currentPoseLevel = movementContext.PoseLevel;
                 }
-                if (currentTilt != tilt || currentPoseLevel != MovementContext.PoseLevel || !MovementContext.IsGrounded)
+                if (currentTilt != tilt || currentPoseLevel != movementContext.PoseLevel || !movementContext.IsGrounded)
                 {
                     StanceController.IsMounting = false;
                 }
@@ -510,15 +534,15 @@ namespace CombatStances
 
         protected override MethodBase GetTargetMethod()
         {
-            aimSpeedField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9");
-            pitchField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_14");
-            blindfireRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "vector3_6");
-            weaponPositionField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "vector3_4");
-            aimingQuatField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_2");
-            weapRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_6");
-            isAimingField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "bool_1");
+            aimSpeedField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_aimingSpeed");
+            pitchField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindfireStrength");
+            blindfireRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindFireRotation");
+            weaponPositionField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_temporaryPosition");
+            aimingQuatField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_targetScopeRotation");
+            weapRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_temporaryRotation");
+            isAimingField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_isAiming");
             overlappingBlindfireField = AccessTools.Property(typeof(EFT.Animations.ProceduralWeaponAnimation), "Single_3");
-            currentRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_3");
+            currentRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_cameraIdenity");
 
             return typeof(EFT.Animations.ProceduralWeaponAnimation).GetMethod("ApplySimpleRotation", BindingFlags.Instance | BindingFlags.Public);
         }
@@ -526,7 +550,7 @@ namespace CombatStances
         [PatchPostfix]
         private static void Postfix(ref EFT.Animations.ProceduralWeaponAnimation __instance, float dt)
         {
-            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "ginterface114_0").GetValue(__instance);
+            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
 
             if (playerInterface != null && playerInterface.Weapon != null)
             {
@@ -558,7 +582,7 @@ namespace CombatStances
                         bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseSooting;
                         bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
-                        StanceController.DoMounting(Logger, player, __instance, ref weaponPosition, ref mountWeapPosition);
+                        StanceController.DoMounting(Logger, player, __instance, ref weaponPosition, ref mountWeapPosition, dt, __instance.HandsContainer.WeaponRoot.position);
                         weaponPositionField.SetValue(__instance, weaponPosition);
 
                         currentRotation = Quaternion.Slerp(currentRotation, __instance.IsAiming && allStancesReset ? aimingQuat : doStanceRotation ? stanceRotation : Quaternion.identity, doStanceRotation ? stanceSpeed : __instance.IsAiming ? 8f * aimSpeed * dt : 8f * dt);
@@ -617,7 +641,7 @@ namespace CombatStances
                     else if (player.IsAI)
                     {
                         Quaternion targetRotation = Quaternion.identity;
-                        Quaternion currentRotation = (Quaternion)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_3").GetValue(__instance);
+                        Quaternion currentRotation = (Quaternion)currentRotationField.GetValue(__instance);
                         aimSpeedField.SetValue(__instance, 1f);
 
                         Vector3 lowReadyTargetRotation = new Vector3(18.0f, 5.0f, -1.0f);
@@ -685,14 +709,14 @@ namespace CombatStances
                                     if (isTacBot && !firearmController.IsInReloadOperation() && !__instance.IsAiming && notShooting && (lastDistance >= 25f || lastDistance == 0f))
                                     {
                                         isInStance = true;
-                                        player.BodyAnimatorCommon.SetFloat(GlobalValues.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2);
+                                        player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2);
                                         stanceSpeed = 4f * dt * 2.7f;
                                         targetRotation = highReadyTargetQuaternion;
                                         __instance.HandsContainer.HandsPosition.Zero = __instance.PositionZeroSum + pitch * highReadyTargetPostion;
                                     }
                                     else
                                     {
-                                        player.BodyAnimatorCommon.SetFloat(GlobalValues.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)firearmController.Item.CalculateCellSize().X);
+                                        player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)firearmController.Item.CalculateCellSize().X);
                                     }
 
                                     ///active aim//// 
@@ -736,7 +760,7 @@ namespace CombatStances
                             Quaternion rhs = Quaternion.Euler(pitch * overlappingBlindfire * blindfireRotation);
                             currentRotation = Quaternion.Slerp(currentRotation, __instance.IsAiming && !isInStance ? aimingQuat : isInStance ? targetRotation : Quaternion.identity, isInStance ? stanceSpeed : 8f * dt);
                             __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(weaponPosition, weapRotation * rhs * currentRotation);
-                            AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_3").SetValue(__instance, currentRotation);
+                            currentRotationField.SetValue(__instance, currentRotation);
                         }
                     }
                 }
@@ -781,15 +805,15 @@ namespace CombatStances
 
         protected override MethodBase GetTargetMethod()
         {
-            aimSpeedField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9");
-            fovScaleField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_13");
-            pitchField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_14");
-            displacementStrField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_21");
-            blindfireRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "vector3_6");
-            aimingQuatField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_2");
-            weapLocalRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_5");
-            weapRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "quaternion_6");
-            isAimingField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "bool_1");
+            aimSpeedField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_aimingSpeed");
+            fovScaleField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_compensatoryScale");
+            pitchField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindfireStrength");
+            displacementStrField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_displacementStr");
+            blindfireRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindFireRotation");
+            aimingQuatField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_targetScopeRotation");
+            weapLocalRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_local");
+            weapRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_temporaryRotation");
+            isAimingField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_isAiming");
             overlappingBlindfireField = AccessTools.Property(typeof(EFT.Animations.ProceduralWeaponAnimation), "Single_3");
 
             return typeof(EFT.Animations.ProceduralWeaponAnimation).GetMethod("ApplyComplexRotation", BindingFlags.Instance | BindingFlags.Public);
@@ -799,7 +823,7 @@ namespace CombatStances
         private static void Postfix(ref EFT.Animations.ProceduralWeaponAnimation __instance, float dt)
         {
 
-            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "ginterface114_0").GetValue(__instance);
+            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
 
             if (playerInterface != null && playerInterface.Weapon != null)
             {
@@ -830,7 +854,7 @@ namespace CombatStances
                     Vector3 worldPivot = __instance.HandsContainer.WeaponRootAnim.TransformPoint(position);//
                     Vector3 weaponWorldPos = __instance.HandsContainer.WeaponRootAnim.position;
 
-                    StanceController.DoMounting(Logger, player, __instance, ref weaponWorldPos, ref mountWeapPosition);
+                    StanceController.DoMounting(Logger, player, __instance, ref weaponWorldPos, ref mountWeapPosition, dt, __instance.HandsContainer.WeaponRoot.position);
 
                     __instance.DeferredRotateWithCustomOrder(__instance.HandsContainer.WeaponRootAnim, worldPivot, vector);
                     Vector3 vector2 = __instance.HandsContainer.Recoil.Get();

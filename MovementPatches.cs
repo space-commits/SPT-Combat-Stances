@@ -11,9 +11,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using static EFT.Player;
-using MovementContext = GClass1667;
-using ValueHandler = GClass765;
-
+using ValueHandler = GClass654;
 namespace CombatStances
 {
 
@@ -28,7 +26,7 @@ namespace CombatStances
         private static bool Prefix(MovementContext __instance, float speed, ref float __result)
         {
 
-            Player player = (Player)AccessTools.Field(typeof(MovementContext), "player_0").GetValue(__instance);
+            Player player = (Player)AccessTools.Field(typeof(MovementContext), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
                 float stanceFactor = StanceController.IsPatrolStance ? 1.25f : StanceController.IsHighReady || StanceController.IsShortStock ? 0.95f : 1f;
@@ -52,7 +50,7 @@ namespace CombatStances
         private static bool Prefix(ref MovementContext __instance, bool isAiming, float slow)
         {
 
-            Player player = (Player)AccessTools.Field(typeof(MovementContext), "player_0").GetValue(__instance);
+            Player player = (Player)AccessTools.Field(typeof(MovementContext), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
                 if (isAiming)
@@ -81,11 +79,11 @@ namespace CombatStances
         [PatchPrefix]
         private static bool Prefix(MovementContext __instance, float deltaTime)
         {
-            Player player = (Player)AccessTools.Field(typeof(MovementContext), "player_0").GetValue(__instance);
+            Player player = (Player)AccessTools.Field(typeof(MovementContext), "_player").GetValue(__instance);
 
             if (player.IsYourPlayer == true)
             {
-                ValueHandler rotationFrameSpan = (ValueHandler)AccessTools.Field(typeof(MovementContext), "gclass765_0").GetValue(__instance);
+                ValueHandler rotationFrameSpan = (ValueHandler)AccessTools.Field(typeof(MovementContext), "_averageRotationX").GetValue(__instance);
                 float stanceAccelBonus = StanceController.IsShortStock ? 0.9f : StanceController.IsLowReady ? 1.3f : StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.7f : StanceController.IsHighReady ? 1.3f : 1f;
                 float stanceSpeedBonus = StanceController.IsPatrolStance ? 1.5f : StanceController.IsHighReady && Plugin.EnableTacSprint.Value ? 1.15f : 1f;
 

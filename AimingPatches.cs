@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using InventoryItemHandler = GClass2672;
+using InventoryItemHandler = GClass2584;
 
 
 namespace CombatStances

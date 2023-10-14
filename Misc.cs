@@ -9,8 +9,7 @@ using System.Text;
 using UnityEngine;
 using Comfort.Common;
 using static EFT.Player;
-using PlayerInterface = GInterface114;
-using WeaponSkills = SkillsClass.GClass1743;
+using PlayerInterface = GInterface113;
 
 namespace CombatStances
 {
@@ -51,7 +50,7 @@ namespace CombatStances
         [PatchPostfix]
         private static void PatchPostfix(ref EFT.Animations.ProceduralWeaponAnimation __instance)
         {
-            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "ginterface114_0").GetValue(__instance);
+            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
 
             if (playerInterface != null && playerInterface.Weapon != null)
             {
@@ -60,7 +59,7 @@ namespace CombatStances
                 if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer)
                 {
                     Plugin.HasOptic = __instance.CurrentScope.IsOptic ? true : false;
-                    Plugin.AimSpeed = (float)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "float_9").GetValue(__instance);
+                    Plugin.AimSpeed = (float)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_aimingSpeed").GetValue(__instance);
                     Plugin.ErgoDelta = weapon.ErgonomicsDelta;
                 }
             }
@@ -77,7 +76,7 @@ namespace CombatStances
         [PatchPostfix]
         private static void PatchPostfix(ref EFT.Animations.ProceduralWeaponAnimation __instance)
         {
-            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "ginterface114_0").GetValue(__instance);
+            PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
 
             if (playerInterface != null && playerInterface.Weapon != null)
             {
@@ -108,9 +107,9 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(Player.FirearmController), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
-                WeaponSkills skillsClass = (WeaponSkills)AccessTools.Field(typeof(EFT.Player.FirearmController), "gclass1743_0").GetValue(__instance);
-                Plugin.WeaponSkillErgo = skillsClass.DeltaErgonomics;
-                Plugin.AimSkillADSBuff = skillsClass.AimSpeed;
+                SkillManager.GClass1638 weaponInfo = player.Skills.GetWeaponInfo(__instance.Item);
+                Plugin.WeaponSkillErgo = weaponInfo.DeltaErgonomics;
+                Plugin.AimSkillADSBuff = weaponInfo.AimSpeed;
             }
         }
     }
