@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using InventoryItemHandler = GClass2584;
+using InventoryItemHandler = GClass2585;
 
 
 namespace CombatStances
@@ -76,10 +76,13 @@ namespace CombatStances
                 bool isAiming = (bool)AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").GetValue(fc);
                 FaceShieldComponent fsComponent = player.FaceShieldObserver.Component;
                 NightVisionComponent nvgComponent = player.NightVisionObserver.Component;
+                ThermalVisionComponent thermComponent = player.ThermalVisionObserver.Component;
                 bool fsIsON = fsComponent != null && (fsComponent.Togglable == null || fsComponent.Togglable.On);
                 bool nvgIsOn = nvgComponent != null && (nvgComponent.Togglable == null || nvgComponent.Togglable.On);
+                bool thermalIsOn = thermComponent != null && (thermComponent.Togglable == null || thermComponent.Togglable.On);
                 bool isAllowedADSFS = IsAllowedADSWithFS(fc.Item, fc);
-                if ((Plugin.EnableNVGPatch.Value && nvgIsOn && Plugin.HasOptic) || (Plugin.EnableFSPatch.Value && (fsIsON && !isAllowedADSFS)))
+                bool visionDeviceBlocksADS = Plugin.EnableNVGPatch.Value && (Plugin.HasOptic && (nvgIsOn || thermalIsOn));
+                if (visionDeviceBlocksADS || (Plugin.EnableFSPatch.Value && (fsIsON && !isAllowedADSFS)))
                 {
                     if (!hasSetCanAds)
                     {

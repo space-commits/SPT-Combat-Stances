@@ -10,6 +10,7 @@ using UnityEngine;
 using Comfort.Common;
 using static EFT.Player;
 using PlayerInterface = GInterface113;
+using WeaponSkillsClass = EFT.SkillManager.GClass1638;
 
 namespace CombatStances
 {
@@ -107,7 +108,7 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(Player.FirearmController), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
-                SkillManager.GClass1638 weaponInfo = player.Skills.GetWeaponInfo(__instance.Item);
+                WeaponSkillsClass weaponInfo = player.Skills.GetWeaponInfo(__instance.Item);
                 Plugin.WeaponSkillErgo = weaponInfo.DeltaErgonomics;
                 Plugin.AimSkillADSBuff = weaponInfo.AimSpeed;
             }
