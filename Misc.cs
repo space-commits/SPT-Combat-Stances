@@ -115,7 +115,6 @@ namespace CombatStances
         }
     }
 
-
     public class RegisterShotPatch : ModulePatch
     {
         protected override MethodBase GetTargetMethod()
@@ -133,6 +132,7 @@ namespace CombatStances
                 StanceController.StanceShotTime = 0f;
                 StanceController.IsFiringFromStance = true;
                 Plugin.IsFiring = true;
+                Plugin.IsFiringWiggle = true;
                 Plugin.ShotCount++;
             }
         }
@@ -224,7 +224,6 @@ namespace CombatStances
                     StanceController.IsPatrolStance = false;
                     __instance.HandsController.FirearmsAnimator.SetPatrol(false);
                     __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping;
-                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = Plugin.Convergence;
                 }
                 else if (!Plugin.IsFiring)
                 {

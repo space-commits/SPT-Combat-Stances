@@ -198,7 +198,6 @@ namespace CombatStances
         public static float HandsIntensity = 1f;
         public static float RecoilIntensity = 1f;
         public static float HandsDamping = 0.5f;
-        public static float Convergence = 5f;
 
         public static float AimSpeed;
         public static float WeaponSkillErgo = 0f;

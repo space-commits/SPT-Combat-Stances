@@ -479,6 +479,7 @@ namespace CombatStances
 
         public static float currentTilt = 0f;
         public static float currentPoseLevel = 0f;
+        public static bool wasProne = false;
 
         [PatchPrefix]
         private static void Prefix(MovementState __instance, float tilt)
@@ -492,8 +493,10 @@ namespace CombatStances
                 {
                     currentTilt = tilt;
                     currentPoseLevel = movementContext.PoseLevel;
+                    wasProne = movementContext.IsInPronePose;
                 }
-                if (currentTilt != tilt || currentPoseLevel != movementContext.PoseLevel || !movementContext.IsGrounded)
+
+                if (currentTilt != tilt || currentPoseLevel != movementContext.PoseLevel || !movementContext.IsGrounded || wasProne != movementContext.IsInPronePose)
                 {
                     StanceController.IsMounting = false;
                 }
@@ -559,7 +562,7 @@ namespace CombatStances
                 if (player != null)
                 {
                     Player.FirearmController firearmController = player.HandsController as Player.FirearmController;
-                   
+
                     float pitch = (float)pitchField.GetValue(__instance);
                     Quaternion aimingQuat = (Quaternion)aimingQuatField.GetValue(__instance);
                     float overlappingBlindfire = (float)overlappingBlindfireField.GetValue(__instance);
@@ -612,7 +615,7 @@ namespace CombatStances
                             hasResetShortStock = true;
                             StanceController.DoPistolStances(true, ref __instance, ref stanceRotation, dt, ref hasResetPistolPos, player, Logger, ref stanceSpeed, ref isResettingPistol, Plugin.ErgoDelta);
                         }
-                        else if(!isPistol)
+                        else if (!isPistol)
                         {
                             if ((!isInStance && allStancesReset) || (cancelBecauseSooting && !isInShootableStance) || Plugin.IsAiming || cancelStance || Plugin.IsBlindFiring)
                             {
@@ -773,7 +776,7 @@ namespace CombatStances
     {
         private static FieldInfo aimSpeedField;
         private static FieldInfo fovScaleField;
-        private static FieldInfo pitchField;
+        private static FieldInfo blindfireStrength;
         private static FieldInfo displacementStrField;
         private static FieldInfo blindfireRotationField;
         private static FieldInfo aimingQuatField;
@@ -807,7 +810,7 @@ namespace CombatStances
         {
             aimSpeedField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_aimingSpeed");
             fovScaleField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_compensatoryScale");
-            pitchField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindfireStrength");
+            blindfireStrength = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindfireStrength");
             displacementStrField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_displacementStr");
             blindfireRotationField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_blindFireRotation");
             aimingQuatField = AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_targetScopeRotation");
@@ -822,7 +825,6 @@ namespace CombatStances
         [PatchPostfix]
         private static void Postfix(ref EFT.Animations.ProceduralWeaponAnimation __instance, float dt)
         {
-
             PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
 
             if (playerInterface != null && playerInterface.Weapon != null)
@@ -837,7 +839,7 @@ namespace CombatStances
 
                     float aimSpeed = (float)aimSpeedField.GetValue(__instance);
                     float fovScale = (float)fovScaleField.GetValue(__instance);
-                    float pitch = (float)pitchField.GetValue(__instance);
+                    float pitch = (float)blindfireStrength.GetValue(__instance);
                     float displacementStr = (float)displacementStrField.GetValue(__instance);
                     Vector3 blindFireRotation = (Vector3)blindfireRotationField.GetValue(__instance);
                     Quaternion aimingQuat = (Quaternion)aimingQuatField.GetValue(__instance);
@@ -882,7 +884,7 @@ namespace CombatStances
                     currentRotation = Quaternion.Slerp(currentRotation, __instance.IsAiming && allStancesReset ? aimingQuat : doStanceRotation ? stanceRotation : Quaternion.identity, doStanceRotation ? stanceRotationSpeed * Plugin.StanceRotationSpeedMulti.Value : __instance.IsAiming ? 8f * aimSpeed * dt : 8f * dt);
                     Quaternion rhs = Quaternion.Euler(pitch * overlappingBlindfire * blindFireRotation);
 
-                    if (Plugin.RecoilStandaloneIsPresent) 
+                    if (Plugin.RecoilStandaloneIsPresent)
                     {
                         StanceController.DoCantedRecoil(ref targetRecoil, ref currentRecoil, ref weapRotation);
                     }
