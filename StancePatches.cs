@@ -151,13 +151,13 @@ namespace CombatStances
 
             StanceController.IsBracing = true;
 
-            float mountOrientationBonus = StanceController.IsBracingTop ? 0.75f : 1f;
-            float mountingRecoilLimit = weapClass == "pistol" ? 0.1f : 0.65f;
+            float mountOrientationBonus = StanceController.IsBracingTop ? 0.8f : 1f;
+            float mountingRecoilBase = weapClass == "pistol" ? 0.1f : 0.3f;
 
             StanceController.BracingSwayBonus = Mathf.Lerp(StanceController.BracingSwayBonus, 0.8f * mountOrientationBonus, 0.25f);
             StanceController.BracingRecoilBonus = Mathf.Lerp(StanceController.BracingRecoilBonus, 0.85f * mountOrientationBonus, 0.25f);
             StanceController.MountingSwayBonus = Mathf.Clamp(0.55f * mountOrientationBonus, 0.4f, 1f);
-            StanceController.MountingRecoilBonus = Mathf.Clamp(mountingRecoilLimit * mountOrientationBonus, 0.1f, 1f);
+            StanceController.MountingRecoilBonus = Mathf.Clamp(mountingRecoilBase * mountOrientationBonus, 0.1f, 1f);
         }
 
         [PatchPrefix]
@@ -392,6 +392,10 @@ namespace CombatStances
                         __instance.HandsContainer.HandsPosition.Zero = __instance.PositionZeroSum + pitch * targetPosition;
                         __instance.HandsContainer.HandsRotation.Zero = __instance.RotationZeroSum;
                         return false;
+                    }
+                    else
+                    {
+                        targetPosition = Vector3.zero;
                     }
 
                     __instance.HandsContainer.HandsPosition.Zero = __instance.PositionZeroSum + collidingModifier * targetPosition;

@@ -83,7 +83,7 @@ namespace CombatStances
             {
                 Weapon weapon = playerInterface.Weapon;
                 Player player = Singleton<GameWorld>.Instance.GetAlivePlayerByProfileID(weapon.Owner.ID);
-                if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer)
+                if (player != null && player.MovementContext.CurrentState.Name != EPlayerState.Stationary && player.IsYourPlayer && !StanceController.IsMounting && !StanceController.IsBracing)
                 {
                     Plugin.HandsIntensity = __instance.HandsContainer.HandsRotation.InputIntensity;
                     Plugin.BreathIntensity = __instance.Breath.Intensity;
@@ -224,6 +224,7 @@ namespace CombatStances
                     StanceController.IsPatrolStance = false;
                     __instance.HandsController.FirearmsAnimator.SetPatrol(false);
                     __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping;
+                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = fc.Item.Template.Convergence;
                 }
                 else if (!Plugin.IsFiring)
                 {
