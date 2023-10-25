@@ -86,9 +86,11 @@ namespace CombatStances
                 {
                     if (!hasSetCanAds)
                     {
+                        if (isAiming)
+                        {
+                            fc.ToggleAim();
+                        }
                         Plugin.IsAllowedADS = false;
-                        player.ProceduralWeaponAnimation.IsAiming = false;
-                        AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
                         hasSetCanAds = true;
                     }
                 }
@@ -98,21 +100,19 @@ namespace CombatStances
                     hasSetCanAds = false;
                 }
 
-                if (StanceController.IsActiveAiming && !isAiming)
+                if (StanceController.IsActiveAiming && !hasSetActiveAimADS)
                 {
-                    if (!hasSetActiveAimADS)
-                    {
-                        Plugin.IsAllowedADS = false;
-                        player.ProceduralWeaponAnimation.IsAiming = false;
-                        AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
-                        player.MovementContext.SetAimingSlowdown(true, 0.33f);
-                        hasSetActiveAimADS = true;
-                    }
-
+                    player.MovementContext.SetAimingSlowdown(true, 0.33f);
+                    hasSetActiveAimADS = true;
                 }
-                if (!StanceController.IsActiveAiming && hasSetActiveAimADS)
+                else if (!StanceController.IsActiveAiming && hasSetActiveAimADS)
                 {
                     player.MovementContext.SetAimingSlowdown(false, 0.33f);
+                    if (isAiming)
+                    {
+                        player.MovementContext.SetAimingSlowdown(true, 0.33f);
+                    }
+
                     hasSetActiveAimADS = false;
                 }
 
