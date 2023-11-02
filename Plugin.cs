@@ -338,8 +338,7 @@ namespace CombatStances
             {
                 if (Plugin.ShotCount > Plugin.PrevShotCount)
                 {
-                    Plugin.IsFiringWiggle = true;
-                    StanceController.IsFiringFromStance = true;
+                    StanceController.IsFiringStance = true;
                     Plugin.PrevShotCount = Plugin.ShotCount;
                 }
 

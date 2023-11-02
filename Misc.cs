@@ -137,8 +137,9 @@ namespace CombatStances
                 }
 
                 Plugin.FiringTimer = 0f;
+                Plugin.WiggleTimer = 0f;
                 StanceController.StanceShotTime = 0f;
-                StanceController.IsFiringFromStance = true;
+                StanceController.IsFiringStance = true;
                 Plugin.IsFiring = true;
                 Plugin.IsFiringWiggle = true;
                 Plugin.ShotCount++;
