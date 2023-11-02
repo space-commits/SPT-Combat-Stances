@@ -128,6 +128,14 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(EFT.Player.FirearmController), "_player").GetValue(__instance);
             if (player.IsYourPlayer == true)
             {
+                if (!Plugin.RecoilStandaloneIsPresent) 
+                {
+                    player.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping;
+                    player.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = __instance.Item.Template.Convergence;
+                    player.ProceduralWeaponAnimation.Shootingg.ShotVals[3].Intensity = __instance.Item.Template.CameraRecoil;
+                    player.ProceduralWeaponAnimation.Shootingg.ShotVals[4].Intensity = -__instance.Item.Template.CameraRecoil;
+                }
+
                 Plugin.FiringTimer = 0f;
                 StanceController.StanceShotTime = 0f;
                 StanceController.IsFiringFromStance = true;
@@ -219,12 +227,10 @@ namespace CombatStances
                     __instance.ProceduralWeaponAnimation.HandsContainer.HandsRotation.InputIntensity = Plugin.HandsIntensity * mountingSwayBonus;
                 }
 
-                if (Plugin.IsFiring && !Plugin.RecoilStandaloneIsPresent)
+                if (Plugin.IsFiring)
                 {
                     StanceController.IsPatrolStance = false;
                     __instance.HandsController.FirearmsAnimator.SetPatrol(false);
-                    __instance.ProceduralWeaponAnimation.HandsContainer.HandsPosition.Damping = Plugin.HandsDamping;
-                    __instance.ProceduralWeaponAnimation.HandsContainer.Recoil.ReturnSpeed = fc.Item.Template.Convergence;
                 }
                 else if (!Plugin.IsFiring)
                 {

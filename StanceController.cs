@@ -114,8 +114,8 @@ namespace CombatStances
                 if (fc.Item.WeapClass != "pistol")
                 {
                     bool isActuallyBracing = !IsMounting && IsBracing;
-                    bool shooting = IsFiringFromStance && (IsHighReady || IsLowReady || IsShortStock);
-                    bool canDoIdleStamDrain = Plugin.EnableIdleStamDrain.Value && !Plugin.IsAiming && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose && !shooting;
+                    bool shooting = IsFiringFromStance && (IsHighReady || IsLowReady);
+                    bool canDoIdleStamDrain = Plugin.EnableIdleStamDrain.Value && ((!Plugin.IsAiming && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose) || shooting);
                     bool canDoHighRegen = IsHighReady && !IsFiringFromStance && !Plugin.IsAiming;
                     bool canDoShortRegen = IsShortStock && !IsFiringFromStance && !Plugin.IsAiming;
                     bool canDoLowRegen = IsLowReady && !IsFiringFromStance && !Plugin.IsAiming;
@@ -591,16 +591,19 @@ namespace CombatStances
             float movementFactor = 1.3f;
 
             //I've no idea wtf is going on here but it sort of works
-            float targetPos = 0.09f;
-            if (!Plugin.IsBlindFiring && !StanceController.CancelPistolStance)
+            if (Plugin.EnableAltPistol.Value)
             {
-                targetPos = Plugin.PistolOffsetX.Value;
+                float targetPos = 0.09f;
+                if (!Plugin.IsBlindFiring && !StanceController.CancelPistolStance)
+                {
+                    targetPos = Plugin.PistolOffsetX.Value;
+                }
+
+                currentX = Mathf.Lerp(currentX, targetPos, dt * Plugin.PistolPosSpeedMulti.Value * stanceMulti * 0.5f);
+                pwa.HandsContainer.WeaponRoot.localPosition = new Vector3(currentX, pwa.HandsContainer.TrackingTransform.localPosition.y, pwa.HandsContainer.TrackingTransform.localPosition.z);
             }
 
-            currentX = Mathf.Lerp(currentX, targetPos, dt * Plugin.PistolPosSpeedMulti.Value * stanceMulti * 0.5f);
-            pwa.HandsContainer.WeaponRoot.localPosition = new Vector3(currentX, pwa.HandsContainer.TrackingTransform.localPosition.y, pwa.HandsContainer.TrackingTransform.localPosition.z);
-
-            if (!pwa.IsAiming && !StanceController.CancelPistolStance && !Plugin.IsBlindFiring && !StanceController.PistolIsColliding)
+            if (!pwa.IsAiming && !StanceController.CancelPistolStance && !Plugin.IsBlindFiring && !StanceController.PistolIsColliding && Plugin.EnableAltPistol.Value)
             {
                 pwa.Breath.HipPenalty = Plugin.BaseHipfireInaccuracy;
 

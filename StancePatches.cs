@@ -852,27 +852,27 @@ namespace CombatStances
                     bool isAiming = (bool)isAimingField.GetValue(__instance);
                     float overlappingBlindfire = (float)overlappingBlindfireField.GetValue(__instance);
 
-                    Vector3 vector = __instance.HandsContainer.HandsRotation.Get();
-                    Vector3 value = __instance.HandsContainer.SwaySpring.Value;
-                    vector += displacementStr * (isAiming ? __instance.AimingDisplacementStr : 1f) * new Vector3(value.x, 0f, value.z);
-                    vector += value;
-                    Vector3 position = __instance._shouldMoveWeaponCloser ? __instance.HandsContainer.RotationCenterWoStock : __instance.HandsContainer.RotationCenter;
-                    Vector3 worldPivot = __instance.HandsContainer.WeaponRootAnim.TransformPoint(position);//
+                    Vector3 handsRotaton = __instance.HandsContainer.HandsRotation.Get();
+                    Vector3 sway = __instance.HandsContainer.SwaySpring.Value;
+                    handsRotaton += displacementStr * (isAiming ? __instance.AimingDisplacementStr : 1f) * new Vector3(sway.x, 0f, sway.z);
+                    handsRotaton += sway;
+                    Vector3 rotationCenter = __instance._shouldMoveWeaponCloser ? __instance.HandsContainer.RotationCenterWoStock : __instance.HandsContainer.RotationCenter;
+                    Vector3 weapRootPivot = __instance.HandsContainer.WeaponRootAnim.TransformPoint(rotationCenter);//
                     Vector3 weaponWorldPos = __instance.HandsContainer.WeaponRootAnim.position;
 
                     StanceController.DoMounting(Logger, player, __instance, ref weaponWorldPos, ref mountWeapPosition, dt, __instance.HandsContainer.WeaponRoot.position);
 
-                    __instance.DeferredRotateWithCustomOrder(__instance.HandsContainer.WeaponRootAnim, worldPivot, vector);
-                    Vector3 vector2 = __instance.HandsContainer.Recoil.Get();
-                    if (vector2.magnitude > 1E-45f)
+                    __instance.DeferredRotateWithCustomOrder(__instance.HandsContainer.WeaponRootAnim, weapRootPivot, handsRotaton);
+                    Vector3 recoilVector = __instance.HandsContainer.Recoil.Get();
+                    if (recoilVector.magnitude > 1E-45f)
                     {
                         if (fovScale < 1f && __instance.ShotNeedsFovAdjustments)
                         {
-                            vector2.x = Mathf.Atan(Mathf.Tan(vector2.x * 0.017453292f) * fovScale) * 57.29578f;
-                            vector2.z = Mathf.Atan(Mathf.Tan(vector2.z * 0.017453292f) * fovScale) * 57.29578f;
+                            recoilVector.x = Mathf.Atan(Mathf.Tan(recoilVector.x * 0.017453292f) * fovScale) * 57.29578f;
+                            recoilVector.z = Mathf.Atan(Mathf.Tan(recoilVector.z * 0.017453292f) * fovScale) * 57.29578f;
                         }
-                        Vector3 worldPivot2 = weaponWorldPos + weapRotation * __instance.HandsContainer.RecoilPivot;
-                        __instance.DeferredRotate(__instance.HandsContainer.WeaponRootAnim, worldPivot2, weapRotation * vector2);
+                        Vector3 recoilPivot = weaponWorldPos + weapRotation * __instance.HandsContainer.RecoilPivot;
+                        __instance.DeferredRotate(__instance.HandsContainer.WeaponRootAnim, recoilPivot, weapRotation * recoilVector);
                     }
 
                     __instance.ApplyAimingAlignment(dt);
@@ -895,7 +895,7 @@ namespace CombatStances
 
                     __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(weaponWorldPos, weapRotation * rhs * currentRotation);
 
-                    if (isPistol && Plugin.EnableAltPistol.Value && !StanceController.IsPatrolStance)
+                    if (isPistol && !StanceController.IsPatrolStance)
                     {
                         if (StanceController.PistolIsCompressed && !Plugin.IsAiming && !isResettingPistol && !Plugin.IsBlindFiring)
                         {
