@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using InventoryItemHandler = GClass2672;
+using InventoryItemHandler = GClass2585;
 
 
 namespace CombatStances
@@ -76,16 +76,21 @@ namespace CombatStances
                 bool isAiming = (bool)AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").GetValue(fc);
                 FaceShieldComponent fsComponent = player.FaceShieldObserver.Component;
                 NightVisionComponent nvgComponent = player.NightVisionObserver.Component;
+                ThermalVisionComponent thermComponent = player.ThermalVisionObserver.Component;
                 bool fsIsON = fsComponent != null && (fsComponent.Togglable == null || fsComponent.Togglable.On);
                 bool nvgIsOn = nvgComponent != null && (nvgComponent.Togglable == null || nvgComponent.Togglable.On);
+                bool thermalIsOn = thermComponent != null && (thermComponent.Togglable == null || thermComponent.Togglable.On);
                 bool isAllowedADSFS = IsAllowedADSWithFS(fc.Item, fc);
-                if ((Plugin.EnableNVGPatch.Value && nvgIsOn && Plugin.HasOptic) || (Plugin.EnableFSPatch.Value && (fsIsON && !isAllowedADSFS)))
+                bool visionDeviceBlocksADS = Plugin.EnableNVGPatch.Value && (Plugin.HasOptic && (nvgIsOn || thermalIsOn));
+                if (visionDeviceBlocksADS || (Plugin.EnableFSPatch.Value && (fsIsON && !isAllowedADSFS)))
                 {
                     if (!hasSetCanAds)
                     {
+                        if (isAiming)
+                        {
+                            fc.ToggleAim();
+                        }
                         Plugin.IsAllowedADS = false;
-                        player.ProceduralWeaponAnimation.IsAiming = false;
-                        AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
                         hasSetCanAds = true;
                     }
                 }
@@ -95,28 +100,25 @@ namespace CombatStances
                     hasSetCanAds = false;
                 }
 
-                if (StanceController.IsActiveAiming && !isAiming)
+                if (StanceController.IsActiveAiming && !hasSetActiveAimADS)
                 {
-                    if (!hasSetActiveAimADS)
-                    {
-                        Plugin.IsAllowedADS = false;
-                        player.ProceduralWeaponAnimation.IsAiming = false;
-                        AccessTools.Field(typeof(EFT.Player.FirearmController), "_isAiming").SetValue(fc, false);
-                        player.MovementContext.SetAimingSlowdown(true, 0.33f);
-                        hasSetActiveAimADS = true;
-                    }
-
+                    player.MovementContext.SetAimingSlowdown(true, 0.33f);
+                    hasSetActiveAimADS = true;
                 }
-                if (!StanceController.IsActiveAiming && hasSetActiveAimADS)
+                else if (!StanceController.IsActiveAiming && hasSetActiveAimADS)
                 {
                     player.MovementContext.SetAimingSlowdown(false, 0.33f);
+                    if (isAiming)
+                    {
+                        player.MovementContext.SetAimingSlowdown(true, 0.33f);
+                    }
+
                     hasSetActiveAimADS = false;
                 }
 
                 if (isAiming)
                 {
                     StanceController.IsPatrolStance = false;
-                    player.MovementContext.SetAimingSlowdown(true, 0.33f);
                 }
 
                 if (!wasToggled && (fsIsON || nvgIsOn))
@@ -179,6 +181,8 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(EFT.Player.ItemHandsController), "_player").GetValue(__instance);
             if ((Plugin.EnableFSPatch.Value || Plugin.EnableNVGPatch.Value) && !player.IsAI)
             {
+                StanceController.CanResetAimDrain = true;
+
                 return Plugin.IsAllowedADS;
             }
             return true;

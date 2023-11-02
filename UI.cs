@@ -41,6 +41,7 @@ namespace CombatStances
         {
             if (ActiveUIScreen != null && Plugin.EnableMountUI.Value)
             {
+
                 if (StanceController.IsBracingLeftSide)
                 {
                     mountingUIImage.sprite = Plugin.LoadedSprites["mountingleft.png"];
@@ -61,7 +62,7 @@ namespace CombatStances
                     mountingUIRect.sizeDelta = new Vector2(90f, 90f) * scaleAmount;
 
                 }
-                else if (StanceController.IsBracing)
+                else if (StanceController.IsBracing && !Plugin.IsSprinting)
                 {
                     mountingUIRect.sizeDelta = new Vector2(90f, 90f);
                     float alpha = Mathf.Lerp(0.2f, 1f, Mathf.PingPong(Time.time * 1f, 1.0f));

@@ -198,7 +198,6 @@ namespace CombatStances
         public static float HandsIntensity = 1f;
         public static float RecoilIntensity = 1f;
         public static float HandsDamping = 0.5f;
-        public static float Convergence = 5f;
 
         public static float AimSpeed;
         public static float WeaponSkillErgo = 0f;
@@ -214,8 +213,8 @@ namespace CombatStances
         public static Vector3 TransformBaseStartPosition;
         public static Vector3 WeaponOffsetPosition;
 
-        public static bool RecoilStandaloneIsPresent;
-        private static bool checkedForOtherMods;
+        public static bool RecoilStandaloneIsPresent = false;
+        private static bool checkedForOtherMods = false;
         private static bool warnedUser = false;
 
         public static float TotalConvergence;

@@ -13,8 +13,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using EFT.Animations;
-using LightStruct = GStruct154;
-using GlobalValues = GClass1710;
+using LightStruct = GStruct155;
 
 namespace CombatStances
 {
@@ -91,6 +90,8 @@ namespace CombatStances
         public static bool DidStanceWiggle = false;
         public static float WiggleReturnSpeed = 1f;
 
+        public static bool CanResetAimDrain = false;
+
         public static Dictionary<string, bool> LightDictionary = new Dictionary<string, bool>();
 
         public static bool toggledLight = false;
@@ -112,21 +113,37 @@ namespace CombatStances
 
                 if (fc.Item.WeapClass != "pistol")
                 {
-                    if (IsBracing && !IsMounting && !Plugin.EnableIdleStamDrain.Value)
+                    bool isActuallyBracing = !IsMounting && IsBracing;
+                    bool shooting = IsFiringFromStance && (IsHighReady || IsLowReady || IsShortStock);
+                    bool canDoIdleStamDrain = Plugin.EnableIdleStamDrain.Value && !Plugin.IsAiming && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose && !shooting;
+                    bool canDoHighRegen = IsHighReady && !IsFiringFromStance && !Plugin.IsAiming;
+                    bool canDoShortRegen = IsShortStock && !IsFiringFromStance && !Plugin.IsAiming;
+                    bool canDoLowRegen = IsLowReady && !IsFiringFromStance && !Plugin.IsAiming;
+                    bool canDoActiveAimDrain = IsActiveAiming && Plugin.EnableIdleStamDrain.Value;
+                    bool aiming = Plugin.IsAiming && CanResetAimDrain;
+
+
+                    if (isActuallyBracing && !Plugin.EnableIdleStamDrain.Value)
                     {
                         player.Physical.Aim(0f);
                     }
-                    else if (Plugin.IsAiming || (Plugin.EnableIdleStamDrain.Value && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose && (!IsHighReady && !IsLowReady && !IsShortStock && !IsFiringFromStance)))
+                    else if (aiming)
                     {
                         player.Physical.Aim(!(player.MovementContext.StationaryWeapon == null) ? 0f : fc.ErgonomicWeight * 0.8f * ((1f - Plugin.ADSInjuryMulti) + 1f));
+                        CanResetAimDrain = false;
                     }
-                    else if (IsActiveAiming && Plugin.EnableIdleStamDrain.Value)
+                    else if (canDoIdleStamDrain) 
+                    {
+                        player.Physical.Aim(!(player.MovementContext.StationaryWeapon == null) ? 0f : fc.ErgonomicWeight * 0.7f * ((1f - Plugin.ADSInjuryMulti) + 1f));
+                    }
+                    else if (canDoActiveAimDrain)
                     {
                         player.Physical.Aim(!(player.MovementContext.StationaryWeapon == null) ? 0f : fc.ErgonomicWeight * 0.4f * ((1f - Plugin.ADSInjuryMulti) + 1f));
                     }
-                    else if (!Plugin.EnableIdleStamDrain.Value)
+                    else if (CanResetAimDrain)
                     {
                         player.Physical.Aim(0f);
+                        CanResetAimDrain = false;
                     }
 
                     if (IsPatrolStance)
@@ -134,17 +151,17 @@ namespace CombatStances
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.04f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    else if (IsHighReady && !IsFiringFromStance && !Plugin.IsAiming)
+                    else if (canDoHighRegen)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + ((((1f - (fc.ErgonomicWeight / 100f)) * 0.01f) * Plugin.ADSInjuryMulti)), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    else if (IsMounting || (IsLowReady && !IsFiringFromStance && !Plugin.IsAiming))
+                    else if (IsMounting || canDoLowRegen)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.03f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
                     }
-                    else if (IsShortStock && !IsFiringFromStance && !Plugin.IsAiming)
+                    else if (isActuallyBracing || canDoShortRegen)
                     {
                         player.Physical.Aim(0f);
                         player.Physical.HandsStamina.Current = Mathf.Min(player.Physical.HandsStamina.Current + (((1f - (fc.ErgonomicWeight / 100f)) * 0.02f) * Plugin.ADSInjuryMulti), player.Physical.HandsStamina.TotalCapacity);
@@ -703,7 +720,7 @@ namespace CombatStances
 
             if (Plugin.EnableTacSprint.Value && (StanceController.IsHighReady || StanceController.WasHighReady) && !Plugin.RightArmBlacked)
             {
-                player.BodyAnimatorCommon.SetFloat(GlobalValues.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
+                player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, 2f);
                 if (!setRunAnim)
                 {
                     setRunAnim = true;
@@ -714,7 +731,7 @@ namespace CombatStances
             {
                 if (!resetRunAnim)
                 {
-                    player.BodyAnimatorCommon.SetFloat(GlobalValues.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
+                    player.BodyAnimatorCommon.SetFloat(PlayerAnimator.WEAPON_SIZE_MODIFIER_PARAM_HASH, (float)fc.Item.CalculateCellSize().X);
                     resetRunAnim = true;
                     setRunAnim = false;
                 }
@@ -1096,7 +1113,7 @@ namespace CombatStances
         {
             if (playSound)
             {
-                AccessTools.Method(typeof(Player), "method_40").Invoke(player, new object[] { 2f });
+                AccessTools.Method(typeof(Player), "method_41").Invoke(player, new object[] { 2f });
             }
 
             for (int i = 0; i < pwa.Shootingg.ShotVals.Length; i++)
@@ -1109,7 +1126,7 @@ namespace CombatStances
         {
             if (playSound)
             {
-                AccessTools.Method(typeof(Player), "method_40").Invoke(player, new object[] { volume });
+                AccessTools.Method(typeof(Player), "method_41").Invoke(player, new object[] { volume });
             }
 
             for (int i = 0; i < pwa.Shootingg.ShotVals.Length; i++)
@@ -1118,16 +1135,19 @@ namespace CombatStances
             }
         }
 
-        public static void DoMounting(ManualLogSource Logger, Player player, ProceduralWeaponAnimation pwa, ref Vector3 weaponWorldPos, ref Vector3 mountWeapPosition)
+        private static bool needToReset = false;
+        private static Vector3 currentMountedPos = Vector3.zero;
+        private static float timer = 0f;
+        public static void DoMounting(ManualLogSource Logger, Player player, ProceduralWeaponAnimation pwa, ref Vector3 weaponWorldPos, ref Vector3 mountWeapPosition, float dt, Vector3 referencePos)
         {
             bool isMoving = Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.D);
 
-            if (StanceController.IsMounting && (isMoving || !Plugin.IsAiming))
+            if (StanceController.IsMounting && isMoving)
             {
                 StanceController.IsMounting = false;
                 doWiggleEffects(player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
             }
-            if (Plugin.IsAiming && Input.GetKeyDown(Plugin.MountKeybind.Value.MainKey) && StanceController.IsBracing && player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire)
+            if (Input.GetKeyDown(Plugin.MountKeybind.Value.MainKey) && StanceController.IsBracing && player.ProceduralWeaponAnimation.OverlappingAllowsBlindfire)
             {
                 StanceController.IsMounting = !StanceController.IsMounting;
                 if (StanceController.IsMounting)
@@ -1142,10 +1162,24 @@ namespace CombatStances
                 StanceController.IsMounting = false;
                 doWiggleEffects(player, pwa, StanceController.IsMounting ? StanceController.CoverWiggleDirection : StanceController.CoverWiggleDirection * -1f, true);
             }
+
             if (StanceController.IsMounting)
             {
+                needToReset = true;
                 AccessTools.Field(typeof(TurnAwayEffector), "_turnAwayThreshold").SetValue(pwa.TurnAway, 1f);
                 weaponWorldPos = new Vector3(mountWeapPosition.x, mountWeapPosition.y, weaponWorldPos.z); //this makes it feel less clamped to cover but allows h recoil + StanceController.CoverDirection
+                currentMountedPos = weaponWorldPos;
+            }
+            else if (!isMoving && needToReset && mountWeapPosition != referencePos && timer < 0.3f)
+            {
+                timer += dt;
+                currentMountedPos = Vector3.Lerp(currentMountedPos, referencePos, 0.2f);
+                weaponWorldPos = currentMountedPos;
+            }
+            else
+            {
+                needToReset = false;
+                timer = 0f;
             }
         }
 
