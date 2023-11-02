@@ -213,8 +213,8 @@ namespace CombatStances
         public static Vector3 TransformBaseStartPosition;
         public static Vector3 WeaponOffsetPosition;
 
-        public static bool RecoilStandaloneIsPresent;
-        private static bool checkedForOtherMods;
+        public static bool RecoilStandaloneIsPresent = false;
+        private static bool checkedForOtherMods = false;
         private static bool warnedUser = false;
 
         public static float TotalConvergence;

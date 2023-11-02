@@ -119,7 +119,6 @@ namespace CombatStances
                 if (isAiming)
                 {
                     StanceController.IsPatrolStance = false;
-                    player.MovementContext.SetAimingSlowdown(true, 0.33f);
                 }
 
                 if (!wasToggled && (fsIsON || nvgIsOn))
@@ -182,6 +181,8 @@ namespace CombatStances
             Player player = (Player)AccessTools.Field(typeof(EFT.Player.ItemHandsController), "_player").GetValue(__instance);
             if ((Plugin.EnableFSPatch.Value || Plugin.EnableNVGPatch.Value) && !player.IsAI)
             {
+                StanceController.CanResetAimDrain = true;
+
                 return Plugin.IsAllowedADS;
             }
             return true;
