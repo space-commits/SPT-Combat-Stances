@@ -153,6 +153,10 @@ namespace CombatStances
 
             float mountOrientationBonus = StanceController.IsBracingTop ? 0.8f : 1f;
             float mountingRecoilBase = weapClass == "pistol" ? 0.1f : 0.3f;
+            if (Plugin.RecoilStandaloneIsPresent) 
+            {
+                mountingRecoilBase = weapClass == "pistol" ? 0.5f : 0.65f;
+            }
 
             StanceController.BracingSwayBonus = Mathf.Lerp(StanceController.BracingSwayBonus, 0.8f * mountOrientationBonus, 0.25f);
             StanceController.BracingRecoilBonus = Mathf.Lerp(StanceController.BracingRecoilBonus, 0.85f * mountOrientationBonus, 0.25f);
@@ -585,7 +589,7 @@ namespace CombatStances
                         bool allStancesReset = hasResetActiveAim && hasResetLowReady && hasResetHighReady && hasResetShortStock && hasResetPistolPos;
                         bool isInStance = StanceController.IsHighReady || StanceController.IsLowReady || StanceController.IsShortStock || StanceController.IsActiveAiming;
                         bool isInShootableStance = StanceController.IsShortStock || StanceController.IsActiveAiming || isPistol;
-                        bool cancelBecauseSooting = StanceController.IsFiringFromStance && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
+                        bool cancelBecauseSooting = StanceController.IsFiringStance && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
                         bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseSooting;
                         bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
@@ -775,7 +779,6 @@ namespace CombatStances
         }
     }
 
-
     public class ApplyComplexRotationPatch : ModulePatch
     {
         private static FieldInfo aimSpeedField;
@@ -804,7 +807,6 @@ namespace CombatStances
         private static Quaternion currentRotation = Quaternion.identity;
         private static Quaternion stanceRotation = Quaternion.identity;
         private static Vector3 mountWeapPosition = Vector3.zero;
-
         private static Vector3 currentRecoil = Vector3.zero;
         private static Vector3 targetRecoil = Vector3.zero;
 
@@ -827,17 +829,16 @@ namespace CombatStances
         }
 
         [PatchPostfix]
-        private static void Postfix(ref EFT.Animations.ProceduralWeaponAnimation __instance, float dt)
+        private static void Postfix(EFT.Animations.ProceduralWeaponAnimation __instance, float dt)
         {
             PlayerInterface playerInterface = (PlayerInterface)AccessTools.Field(typeof(EFT.Animations.ProceduralWeaponAnimation), "_firearmAnimationData").GetValue(__instance);
-
             if (playerInterface != null && playerInterface.Weapon != null)
             {
                 Weapon weapon = playerInterface.Weapon;
                 Player player = Singleton<GameWorld>.Instance.GetAlivePlayerByProfileID(weapon.Owner.ID);
                 if (player != null && player.IsYourPlayer)
                 {
-                    Player.FirearmController firearmController = player.HandsController as Player.FirearmController;
+                    FirearmController fc = player.HandsController as FirearmController;
 
                     Plugin.IsInThirdPerson = false;
 
@@ -852,27 +853,27 @@ namespace CombatStances
                     bool isAiming = (bool)isAimingField.GetValue(__instance);
                     float overlappingBlindfire = (float)overlappingBlindfireField.GetValue(__instance);
 
-                    Vector3 vector = __instance.HandsContainer.HandsRotation.Get();
-                    Vector3 value = __instance.HandsContainer.SwaySpring.Value;
-                    vector += displacementStr * (isAiming ? __instance.AimingDisplacementStr : 1f) * new Vector3(value.x, 0f, value.z);
-                    vector += value;
-                    Vector3 position = __instance._shouldMoveWeaponCloser ? __instance.HandsContainer.RotationCenterWoStock : __instance.HandsContainer.RotationCenter;
-                    Vector3 worldPivot = __instance.HandsContainer.WeaponRootAnim.TransformPoint(position);//
+                    Vector3 handsRotation = __instance.HandsContainer.HandsRotation.Get();
+                    Vector3 sway = __instance.HandsContainer.SwaySpring.Value;
+                    handsRotation += displacementStr * (isAiming ? __instance.AimingDisplacementStr : 1f) * new Vector3(sway.x, 0f, sway.z);
+                    handsRotation += sway;
+                    Vector3 rotationCenter = __instance._shouldMoveWeaponCloser ? __instance.HandsContainer.RotationCenterWoStock : __instance.HandsContainer.RotationCenter;
+                    Vector3 weapRootPivot = __instance.HandsContainer.WeaponRootAnim.TransformPoint(rotationCenter);
                     Vector3 weaponWorldPos = __instance.HandsContainer.WeaponRootAnim.position;
 
                     StanceController.DoMounting(Logger, player, __instance, ref weaponWorldPos, ref mountWeapPosition, dt, __instance.HandsContainer.WeaponRoot.position);
 
-                    __instance.DeferredRotateWithCustomOrder(__instance.HandsContainer.WeaponRootAnim, worldPivot, vector);
-                    Vector3 vector2 = __instance.HandsContainer.Recoil.Get();
-                    if (vector2.magnitude > 1E-45f)
+                    __instance.DeferredRotateWithCustomOrder(__instance.HandsContainer.WeaponRootAnim, weapRootPivot, handsRotation);
+                    Vector3 recoilVector = __instance.HandsContainer.Recoil.Get();
+                    if (recoilVector.magnitude > 1E-45f)
                     {
                         if (fovScale < 1f && __instance.ShotNeedsFovAdjustments)
                         {
-                            vector2.x = Mathf.Atan(Mathf.Tan(vector2.x * 0.017453292f) * fovScale) * 57.29578f;
-                            vector2.z = Mathf.Atan(Mathf.Tan(vector2.z * 0.017453292f) * fovScale) * 57.29578f;
+                            recoilVector.x = Mathf.Atan(Mathf.Tan(recoilVector.x * 0.017453292f) * fovScale) * 57.29578f;
+                            recoilVector.z = Mathf.Atan(Mathf.Tan(recoilVector.z * 0.017453292f) * fovScale) * 57.29578f;
                         }
-                        Vector3 worldPivot2 = weaponWorldPos + weapRotation * __instance.HandsContainer.RecoilPivot;
-                        __instance.DeferredRotate(__instance.HandsContainer.WeaponRootAnim, worldPivot2, weapRotation * vector2);
+                        Vector3 recoilPivot = weaponWorldPos + weapRotation * __instance.HandsContainer.RecoilPivot;
+                        __instance.DeferredRotate(__instance.HandsContainer.WeaponRootAnim, recoilPivot, weapRotation * recoilVector);
                     }
 
                     __instance.ApplyAimingAlignment(dt);
@@ -881,8 +882,8 @@ namespace CombatStances
                     bool allStancesReset = hasResetActiveAim && hasResetLowReady && hasResetHighReady && hasResetShortStock && hasResetPistolPos;
                     bool isInStance = StanceController.IsHighReady || StanceController.IsLowReady || StanceController.IsShortStock || StanceController.IsActiveAiming;
                     bool isInShootableStance = StanceController.IsShortStock || StanceController.IsActiveAiming || isPistol;
-                    bool cancelBecauseSooting = StanceController.IsFiringFromStance && !StanceController.IsActiveAiming && !StanceController.IsShortStock && !isPistol;
-                    bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseSooting;
+                    bool cancelBecauseShooting = StanceController.IsFiringStance && !isInShootableStance;
+                    bool doStanceRotation = (isInStance || !allStancesReset || StanceController.PistolIsCompressed) && !cancelBecauseShooting;
                     bool cancelStance = (StanceController.CancelActiveAim && StanceController.IsActiveAiming) || (StanceController.CancelHighReady && StanceController.IsHighReady) || (StanceController.CancelLowReady && StanceController.IsLowReady) || (StanceController.CancelShortStock && StanceController.IsShortStock) || (StanceController.CancelPistolStance && StanceController.PistolIsCompressed);
 
                     currentRotation = Quaternion.Slerp(currentRotation, __instance.IsAiming && allStancesReset ? aimingQuat : doStanceRotation ? stanceRotation : Quaternion.identity, doStanceRotation ? stanceRotationSpeed * Plugin.StanceRotationSpeedMulti.Value : __instance.IsAiming ? 8f * aimSpeed * dt : 8f * dt);
@@ -895,7 +896,7 @@ namespace CombatStances
 
                     __instance.HandsContainer.WeaponRootAnim.SetPositionAndRotation(weaponWorldPos, weapRotation * rhs * currentRotation);
 
-                    if (isPistol && Plugin.EnableAltPistol.Value && !StanceController.IsPatrolStance)
+                    if (isPistol && !StanceController.IsPatrolStance)
                     {
                         if (StanceController.PistolIsCompressed && !Plugin.IsAiming && !isResettingPistol && !Plugin.IsBlindFiring)
                         {
@@ -910,7 +911,6 @@ namespace CombatStances
                         {
                             StanceController.StanceTargetPosition = Vector3.Lerp(StanceController.StanceTargetPosition, Vector3.zero, 5f * dt);
                         }
-
                         hasResetActiveAim = true;
                         hasResetHighReady = true;
                         hasResetLowReady = true;
@@ -919,7 +919,7 @@ namespace CombatStances
                     }
                     else if (!isPistol)
                     {
-                        if ((!isInStance && allStancesReset) || (cancelBecauseSooting && !isInShootableStance) || Plugin.IsAiming || cancelStance || Plugin.IsBlindFiring)
+                        if ((!isInStance && allStancesReset) || (cancelBecauseShooting && !isInShootableStance) || Plugin.IsAiming || cancelStance || Plugin.IsBlindFiring)
                         {
                             StanceController.StanceBlender.Target = 0f;
                         }
@@ -928,13 +928,13 @@ namespace CombatStances
                             StanceController.StanceBlender.Target = 1f;
                         }
 
-                        if (((!isInStance && allStancesReset) && !cancelBecauseSooting && !Plugin.IsAiming) || (Plugin.IsBlindFiring))
+                        if (((!isInStance && allStancesReset) && !cancelBecauseShooting && !Plugin.IsAiming) || (Plugin.IsBlindFiring))
                         {
                             StanceController.StanceTargetPosition = Vector3.Lerp(StanceController.StanceTargetPosition, Vector3.zero, 5f * dt);
                         }
 
                         hasResetPistolPos = true;
-                        StanceController.DoRifleStances(Logger, player, firearmController, false, ref __instance, ref stanceRotation, dt, ref isResettingShortStock, ref hasResetShortStock, ref hasResetLowReady, ref hasResetActiveAim, ref hasResetHighReady, ref isResettingHighReady, ref isResettingLowReady, ref isResettingActiveAim, ref stanceRotationSpeed, Plugin.ErgoDelta);
+                        StanceController.DoRifleStances(Logger, player, fc, false, ref __instance, ref stanceRotation, dt, ref isResettingShortStock, ref hasResetShortStock, ref hasResetLowReady, ref hasResetActiveAim, ref hasResetHighReady, ref isResettingHighReady, ref isResettingLowReady, ref isResettingActiveAim, ref stanceRotationSpeed, Plugin.ErgoDelta);
                     }
 
                     StanceController.HasResetActiveAim = hasResetActiveAim;

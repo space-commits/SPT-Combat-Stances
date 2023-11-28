@@ -37,7 +37,7 @@ namespace CombatStances
         public static bool WasShortStock = false;
         public static bool WasActiveAim = false;
 
-        public static bool IsFiringFromStance = false;
+        public static bool IsFiringStance = false;
         public static float StanceShotTime = 0.0f;
         public static float ManipTime = 0.0f;
         public static float DampingTimer = 0.0f;
@@ -107,18 +107,18 @@ namespace CombatStances
         public static void SetStanceStamina(Player player, Player.FirearmController fc)
         {
             bool isBracing = !IsMounting && IsBracing && Plugin.EnableIdleStamDrain.Value;
-            if (!Plugin.IsSprinting && !isBracing)
+            if (!Plugin.IsSprinting)
             {
                 gotCurrentStam = false;
 
                 if (fc.Item.WeapClass != "pistol")
                 {
                     bool isActuallyBracing = !IsMounting && IsBracing;
-                    bool shooting = IsFiringFromStance && (IsHighReady || IsLowReady || IsShortStock);
-                    bool canDoIdleStamDrain = Plugin.EnableIdleStamDrain.Value && !Plugin.IsAiming && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose && !shooting;
-                    bool canDoHighRegen = IsHighReady && !IsFiringFromStance && !Plugin.IsAiming;
-                    bool canDoShortRegen = IsShortStock && !IsFiringFromStance && !Plugin.IsAiming;
-                    bool canDoLowRegen = IsLowReady && !IsFiringFromStance && !Plugin.IsAiming;
+                    bool shooting = IsFiringStance && (IsHighReady || IsLowReady);
+                    bool canDoIdleStamDrain = Plugin.EnableIdleStamDrain.Value && ((!Plugin.IsAiming && !IsActiveAiming && !IsMounting && !IsBracing && !player.IsInPronePose) || shooting);
+                    bool canDoHighRegen = IsHighReady && !IsFiringStance && !Plugin.IsAiming;
+                    bool canDoShortRegen = IsShortStock && !IsFiringStance && !Plugin.IsAiming;
+                    bool canDoLowRegen = IsLowReady && !IsFiringStance && !Plugin.IsAiming;
                     bool canDoActiveAimDrain = IsActiveAiming && Plugin.EnableIdleStamDrain.Value;
                     bool aiming = Plugin.IsAiming && CanResetAimDrain;
 
@@ -256,7 +256,7 @@ namespace CombatStances
 
             if (StanceShotTime >= 0.5f)
             {
-                IsFiringFromStance = false;
+                IsFiringStance = false;
                 StanceShotTime = 0f;
             }
         }
@@ -591,16 +591,19 @@ namespace CombatStances
             float movementFactor = 1.3f;
 
             //I've no idea wtf is going on here but it sort of works
-            float targetPos = 0.09f;
-            if (!Plugin.IsBlindFiring && !StanceController.CancelPistolStance)
+            if (Plugin.EnableAltPistol.Value)
             {
-                targetPos = Plugin.PistolOffsetX.Value;
+                float targetPos = 0.09f;
+                if (!Plugin.IsBlindFiring && !StanceController.CancelPistolStance)
+                {
+                    targetPos = Plugin.PistolOffsetX.Value;
+                }
+
+                currentX = Mathf.Lerp(currentX, targetPos, dt * Plugin.PistolPosSpeedMulti.Value * stanceMulti * 0.5f);
+                pwa.HandsContainer.WeaponRoot.localPosition = new Vector3(currentX, pwa.HandsContainer.TrackingTransform.localPosition.y, pwa.HandsContainer.TrackingTransform.localPosition.z);
             }
 
-            currentX = Mathf.Lerp(currentX, targetPos, dt * Plugin.PistolPosSpeedMulti.Value * stanceMulti * 0.5f);
-            pwa.HandsContainer.WeaponRoot.localPosition = new Vector3(currentX, pwa.HandsContainer.TrackingTransform.localPosition.y, pwa.HandsContainer.TrackingTransform.localPosition.z);
-
-            if (!pwa.IsAiming && !StanceController.CancelPistolStance && !Plugin.IsBlindFiring && !StanceController.PistolIsColliding)
+            if (!pwa.IsAiming && !StanceController.CancelPistolStance && !Plugin.IsBlindFiring && !StanceController.PistolIsColliding && Plugin.EnableAltPistol.Value)
             {
                 pwa.Breath.HipPenalty = Plugin.BaseHipfireInaccuracy;
 
@@ -844,7 +847,7 @@ namespace CombatStances
             }
 
             ////high ready////
-            if (StanceController.IsHighReady && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelHighReady && !Plugin.IsBlindFiring)
+            if (StanceController.IsHighReady && !StanceController.IsActiveAiming && !StanceController.IsLowReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiringStance && !StanceController.CancelHighReady && !Plugin.IsBlindFiring)
             {
                 float shortToHighMulti = 1.0f;
                 float lowToHighMulti = 1.0f;
@@ -941,7 +944,7 @@ namespace CombatStances
             }
 
             ////low ready////
-            if (StanceController.IsLowReady && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiringFromStance && !StanceController.CancelLowReady && !Plugin.IsBlindFiring)
+            if (StanceController.IsLowReady && !StanceController.IsActiveAiming && !StanceController.IsHighReady && !StanceController.IsShortStock && !pwa.IsAiming && !StanceController.IsFiringStance && !StanceController.CancelLowReady && !Plugin.IsBlindFiring)
             {
                 float highToLow = 1.0f;
                 float shortToLow = 1.0f;
